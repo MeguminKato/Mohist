@@ -4,7 +4,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.EnumHand;
 import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
@@ -47,4 +49,8 @@ public class PlayerAPI {
     {
         return MinecraftServer.getServerInst().getPlayerList().canSendCommands(ep.getGameProfile());
     }
+    public static ItemStack getPlayerHandItem(EntityPlayer player, EnumHand hand){
+        return player.getHeldItem(hand);
+    }
+
 }

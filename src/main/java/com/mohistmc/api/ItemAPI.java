@@ -195,4 +195,13 @@ public class ItemAPI {
     public static String getModid(int id){
         return MODNAME_MAP.containsKey(id) ? MODNAME_MAP.get(id) : "unknown";
     }
+    public static String getItemUnlocalizedName(net.minecraft.item.ItemStack itemStack){
+        return itemStack.getUnlocalizedName();
+    }
+    public static int getItemSubid(net.minecraft.item.ItemStack itemStack){
+        if(itemStack.getMetadata()==itemStack.getItemDamage()){
+            return itemStack.getMetadata();
+        }
+        return itemStack.getItemDamage();
+    }
 }
