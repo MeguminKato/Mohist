@@ -145,8 +145,8 @@ project(':mohist') {
     }
 
     version = '1.12.2-homebaked'
-    if (hasProperty("teamcity")) {
-        version = '1.12.2-homebaked-'+teamcity["build.number"]
+    if(hasProperty("build.number")){
+    	version+="-"+System.getProperty("build.number")
     }
     patcher {
         exc = file("$rootDir/src/main/resources/forge.exc")
