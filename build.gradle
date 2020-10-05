@@ -145,7 +145,7 @@ project(':mohist') {
     }
 
     version = '1.12.2-homebaked'
-    if(hasProperty("build.number")){
+    if(System.getProperty("build.number")!=null){
     	version+="-"+System.getProperty("build.number")
     }
     patcher {
