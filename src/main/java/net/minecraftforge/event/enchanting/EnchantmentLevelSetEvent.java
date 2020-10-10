@@ -19,11 +19,12 @@
 
 package net.minecraftforge.event.enchanting;
 
-import javax.annotation.Nonnull;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.eventhandler.Event;
+import net.minecraftforge.eventbus.api.Event;
+
+import javax.annotation.Nonnull;
 
 /**
  * Fired when the enchantment level is set for each of the three potential enchantments in the enchanting table.
@@ -33,7 +34,7 @@ import net.minecraftforge.fml.common.eventhandler.Event;
  * from 0-15 and indicates how many bookshelves surround the enchanting table. The {@link #itemStack} representing the item being
  * enchanted is also available.
  */
-public class EnchantmentLevelSetEvent extends Event
+public class EnchantmentLevelSetEvent extends net.minecraftforge.eventbus.api.Event
 {
     private final World world;
     private final BlockPos pos;

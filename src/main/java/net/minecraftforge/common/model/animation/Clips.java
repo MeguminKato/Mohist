@@ -19,7 +19,30 @@
 
 package net.minecraftforge.common.model.animation;
 
+import java.io.IOException;
+
+import net.minecraft.util.math.vector.TransformationMatrix;
+import net.minecraft.client.renderer.model.IModelTransform;
+import net.minecraft.client.renderer.model.IUnbakedModel;
+import net.minecraft.client.renderer.model.ModelResourceLocation;
+import net.minecraft.util.IStringSerializable;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.common.animation.Event;
+import net.minecraftforge.common.animation.ITimeValue;
+import net.minecraftforge.api.distmarker.Dist;
+
+import net.minecraftforge.common.model.TransformationHelper;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.util.function.Function;
 import com.google.common.base.Objects;
+import java.util.Optional;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
@@ -29,32 +52,16 @@ import com.google.gson.TypeAdapterFactory;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
-import java.io.IOException;
-import java.util.Optional;
-import java.util.function.Function;
+
 import javax.annotation.Nullable;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.util.IStringSerializable;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
-import net.minecraftforge.client.model.IModel;
-import net.minecraftforge.client.model.ModelLoaderRegistry;
-import net.minecraftforge.common.animation.Event;
-import net.minecraftforge.common.animation.ITimeValue;
-import net.minecraftforge.common.model.IModelPart;
-import net.minecraftforge.common.model.IModelState;
-import net.minecraftforge.common.model.TRSRTransformation;
-import net.minecraftforge.fml.common.FMLLog;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Various implementations of IClip, and utility methods.
  */
 public final class Clips
 {
+	private static final Logger LOGGER = LogManager.getLogger();
+
     /**
      * Clip that does nothing.
      */
@@ -75,7 +82,7 @@ public final class Clips
         }
 
         @Override
-        public String getName()
+        public String func_176610_l()
         {
             return "identity";
         }
@@ -84,16 +91,16 @@ public final class Clips
     /**
      * Retrieves the clip from the model.
      */
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public static IClip getModelClipNode(ResourceLocation modelLocation, String clipName)
     {
-        IModel model = ModelLoaderRegistry.getModelOrMissing(modelLocation);
+        IUnbakedModel model = ModelLoader.defaultModelGetter().apply(modelLocation);
         Optional<? extends IClip> clip = model.getClip(clipName);
         if (clip.isPresent())
         {
             return new ModelClip(clip.get(), modelLocation, clipName);
         }
-        FMLLog.log.error("Unable to find clip {} in the model {}", clipName, modelLocation);
+        LOGGER.error("Unable to find clip {} in the model {}", clipName, modelLocation);
         // FIXME: missing clip?
         return new ModelClip(IdentityClip.INSTANCE, modelLocation, clipName);
     }
@@ -167,7 +174,7 @@ public final class Clips
             {
                 private final IJointClip parent = childClip.apply(joint);
                 @Override
-                public TRSRTransformation apply(float time)
+                public TransformationMatrix apply(float time)
                 {
                     return parent.apply(TimeClip.this.time.apply(time));
                 }
@@ -284,10 +291,10 @@ public final class Clips
         return new IJointClip()
         {
             @Override
-            public TRSRTransformation apply(float time)
+            public TransformationMatrix apply(float time)
             {
                 float clipTime = input.apply(time);
-                return fromClip.apply(clipTime).slerp(toClip.apply(clipTime), MathHelper.clamp(progress.apply(time), 0, 1));
+                return TransformationHelper.slerp(fromClip.apply(clipTime), toClip.apply(clipTime), MathHelper.clamp(progress.apply(time), 0, 1));
             }
         };
     }
@@ -295,28 +302,34 @@ public final class Clips
     /**
      * IModelState wrapper for a Clip, sampled at specified time.
      */
-    public static Pair<IModelState, Iterable<Event>> apply(final IClip clip, final float lastPollTime, final float time)
+    public static Pair<IModelTransform, Iterable<Event>> apply(final IClip clip, final float lastPollTime, final float time)
     {
-        return Pair.<IModelState, Iterable<Event>>of(new IModelState()
+        return Pair.of(new IModelTransform()
         {
             @Override
-            public Optional<TRSRTransformation> apply(Optional<? extends IModelPart> part)
+            public TransformationMatrix getRotation()
             {
-                if(!part.isPresent() || !(part.get() instanceof IJoint))
+                return TransformationMatrix.identity();
+            }
+
+            @Override
+            public TransformationMatrix getPartTransformation(Object part)
+            {
+                if(!(part instanceof IJoint))
                 {
-                    return Optional.empty();
+                    return TransformationMatrix.identity();
                 }
-                IJoint joint = (IJoint)part.get();
+                IJoint joint = (IJoint)part;
                 // TODO: Cache clip application?
-                TRSRTransformation jointTransform = clip.apply(joint).apply(time).compose(joint.getInvBindPose());
+                TransformationMatrix jointTransform = clip.apply(joint).apply(time).compose(joint.getInvBindPose());
                 Optional<? extends IJoint> parent = joint.getParent();
                 while(parent.isPresent())
                 {
-                    TRSRTransformation parentTransform = clip.apply(parent.get()).apply(time);
+                    TransformationMatrix parentTransform = clip.apply(parent.get()).apply(time);
                     jointTransform = parentTransform.compose(jointTransform);
                     parent = parent.get().getParent();
                 }
-                return Optional.of(jointTransform);
+                return jointTransform;
             }
         }, clip.pastEvents(lastPollTime, time));
     }
@@ -403,7 +416,7 @@ public final class Clips
         }
 
         @Override
-        public String getName()
+        public String func_176610_l()
         {
             return clipName;
         }
@@ -462,7 +475,7 @@ public final class Clips
                     // IdentityClip + ClipReference
                     if(clip instanceof IStringSerializable)
                     {
-                        out.value("#" + ((IStringSerializable)clip).getName());
+                        out.value("#" + ((IStringSerializable)clip).func_176610_l());
                         return;
                     }
                     else if(clip instanceof TimeClip)

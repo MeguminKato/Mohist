@@ -19,13 +19,20 @@
 
 package net.minecraftforge.client;
 
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.WorldClient;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.client.world.ClientWorld;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
-public abstract class IRenderHandler
+/**
+* Use one of {@link IWeatherRenderHandler}, {@link ICloudRenderHandler} or {@link ISkyRenderHandler} instead.
+*
+* todo: remove in 1.17
+*/
+@Deprecated
+@FunctionalInterface
+public interface IRenderHandler
 {
-    @SideOnly(Side.CLIENT)
-    public abstract void render(float partialTicks, WorldClient world, Minecraft mc);
+    @OnlyIn(Dist.CLIENT)
+    void render(int ticks, float partialTicks, ClientWorld world, Minecraft mc);
 }

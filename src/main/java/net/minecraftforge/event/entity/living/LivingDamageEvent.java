@@ -19,11 +19,10 @@
 
 package net.minecraftforge.event.entity.living;
 
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.DamageSource;
 import net.minecraftforge.common.ForgeHooks;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
+import net.minecraftforge.eventbus.api.Cancelable;
+import net.minecraft.util.DamageSource;
+import net.minecraft.entity.LivingEntity;
 
 /**
  * LivingDamageEvent is fired just before damage is applied to entity.<br>
@@ -38,7 +37,7 @@ import net.minecraftforge.fml.common.eventhandler.Cancelable;
  * {@link #source} contains the DamageSource that caused this Entity to be hurt. <br>
  * {@link #amount} contains the final amount of damage that will be dealt to entity. <br>
  * <br>
- * This event is {@link Cancelable}.<br>
+ * This event is {@link net.minecraftforge.eventbus.api.Cancelable}.<br>
  * If this event is canceled, the Entity is not hurt. Used resources WILL NOT be restored.<br>
  * <br>
  * This event does not have a result. {@link HasResult}<br>
@@ -49,7 +48,7 @@ public class LivingDamageEvent extends LivingEvent
 {
     private final DamageSource source;
     private float amount;
-    public LivingDamageEvent(EntityLivingBase entity, DamageSource source, float amount)
+    public LivingDamageEvent(LivingEntity entity, DamageSource source, float amount)
     {
         super(entity);
         this.source = source;

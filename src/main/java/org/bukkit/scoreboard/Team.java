@@ -4,6 +4,8 @@ import java.util.Set;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A team on a scoreboard that has a common display theme and other
@@ -18,6 +20,7 @@ public interface Team {
      * @return Objective name
      * @throws IllegalStateException if this team has been unregistered
      */
+    @NotNull
     String getName() throws IllegalStateException;
 
     /**
@@ -26,17 +29,18 @@ public interface Team {
      * @return Team display name
      * @throws IllegalStateException if this team has been unregistered
      */
+    @NotNull
     String getDisplayName() throws IllegalStateException;
 
     /**
      * Sets the name displayed to entries for this team
      *
      * @param displayName New display name
-     * @throws IllegalArgumentException if displayName is longer than 32
+     * @throws IllegalArgumentException if displayName is longer than 128
      *     characters.
      * @throws IllegalStateException if this team has been unregistered
      */
-    void setDisplayName(String displayName) throws IllegalStateException, IllegalArgumentException;
+    void setDisplayName(@NotNull String displayName) throws IllegalStateException, IllegalArgumentException;
 
     /**
      * Gets the prefix prepended to the display of entries on this team.
@@ -44,6 +48,7 @@ public interface Team {
      * @return Team prefix
      * @throws IllegalStateException if this team has been unregistered
      */
+    @NotNull
     String getPrefix() throws IllegalStateException;
 
     /**
@@ -51,11 +56,11 @@ public interface Team {
      *
      * @param prefix New prefix
      * @throws IllegalArgumentException if prefix is null
-     * @throws IllegalArgumentException if prefix is longer than 16
+     * @throws IllegalArgumentException if prefix is longer than 64
      *     characters
      * @throws IllegalStateException if this team has been unregistered
      */
-    void setPrefix(String prefix) throws IllegalStateException, IllegalArgumentException;
+    void setPrefix(@NotNull String prefix) throws IllegalStateException, IllegalArgumentException;
 
     /**
      * Gets the suffix appended to the display of entries on this team.
@@ -63,6 +68,7 @@ public interface Team {
      * @return the team's current suffix
      * @throws IllegalStateException if this team has been unregistered
      */
+    @NotNull
     String getSuffix() throws IllegalStateException;
 
     /**
@@ -70,11 +76,11 @@ public interface Team {
      *
      * @param suffix the new suffix for this team.
      * @throws IllegalArgumentException if suffix is null
-     * @throws IllegalArgumentException if suffix is longer than 16
+     * @throws IllegalArgumentException if suffix is longer than 64
      *     characters
      * @throws IllegalStateException if this team has been unregistered
      */
-    void setSuffix(String suffix) throws IllegalStateException, IllegalArgumentException;
+    void setSuffix(@NotNull String suffix) throws IllegalStateException, IllegalArgumentException;
 
     /**
      * Gets the color of the team.
@@ -83,8 +89,9 @@ public interface Team {
      * names are handled by prefixes / suffixes.
      *
      * @return team color, defaults to {@link ChatColor#RESET}
-     * @throws IllegalStateException
+     * @throws IllegalStateException if this team has been unregistered
      */
+    @NotNull
     ChatColor getColor() throws IllegalStateException;
 
     /**
@@ -96,7 +103,7 @@ public interface Team {
      * @param color new color, must be non-null. Use {@link ChatColor#RESET} for
      * no color
      */
-    void setColor(ChatColor color);
+    void setColor(@NotNull ChatColor color);
 
     /**
      * Gets the team friendly fire state
@@ -139,19 +146,20 @@ public interface Team {
      * @throws IllegalArgumentException if this team has been unregistered
      * @deprecated see {@link #getOption(org.bukkit.scoreboard.Team.Option)}
      */
-
+    @Deprecated
+    @NotNull
     NameTagVisibility getNameTagVisibility() throws IllegalArgumentException;
 
     /**
      * Set's the team's ability to see name tags
      *
-     * @param visibility The nameTagVisibilty to set
+     * @param visibility The nameTagVisibility to set
      * @throws IllegalArgumentException if this team has been unregistered
      * @deprecated see
      * {@link #setOption(org.bukkit.scoreboard.Team.Option, org.bukkit.scoreboard.Team.OptionStatus)}
      */
-
-    void setNameTagVisibility(NameTagVisibility visibility) throws IllegalArgumentException;
+    @Deprecated
+    void setNameTagVisibility(@NotNull NameTagVisibility visibility) throws IllegalArgumentException;
 
     /**
      * Gets the Set of players on the team
@@ -161,7 +169,8 @@ public interface Team {
      * @deprecated Teams can contain entries that aren't players
      * @see #getEntries()
      */
-
+    @Deprecated
+    @NotNull
     Set<OfflinePlayer> getPlayers() throws IllegalStateException;
 
     /**
@@ -170,6 +179,7 @@ public interface Team {
      * @return entries on the team
      * @throws IllegalStateException if this entries has been unregistered\
      */
+    @NotNull
     Set<String> getEntries() throws IllegalStateException;
 
     /**
@@ -186,6 +196,7 @@ public interface Team {
      * @return Owning scoreboard, or null if this team has been {@link
      *     #unregister() unregistered}
      */
+    @Nullable
     Scoreboard getScoreboard();
 
     /**
@@ -199,8 +210,8 @@ public interface Team {
      * @deprecated Teams can contain entries that aren't players
      * @see #addEntry(String)
      */
-
-    void addPlayer(OfflinePlayer player) throws IllegalStateException, IllegalArgumentException;
+    @Deprecated
+    void addPlayer(@NotNull OfflinePlayer player) throws IllegalStateException, IllegalArgumentException;
 
     /**
      * This puts the specified entry onto this team for the scoreboard.
@@ -211,7 +222,7 @@ public interface Team {
      * @throws IllegalArgumentException if entry is null
      * @throws IllegalStateException if this team has been unregistered
      */
-    void addEntry(String entry) throws IllegalStateException, IllegalArgumentException;
+    void addEntry(@NotNull String entry) throws IllegalStateException, IllegalArgumentException;
 
     /**
      * Removes the player from this team.
@@ -223,18 +234,18 @@ public interface Team {
      * @deprecated Teams can contain entries that aren't players
      * @see #removeEntry(String)
      */
-
-    boolean removePlayer(OfflinePlayer player) throws IllegalStateException, IllegalArgumentException;
+    @Deprecated
+    boolean removePlayer(@NotNull OfflinePlayer player) throws IllegalStateException, IllegalArgumentException;
 
     /**
      * Removes the entry from this team.
      *
      * @param entry the entry to remove
+     * @return if the entry was a part of this team
      * @throws IllegalArgumentException if entry is null
      * @throws IllegalStateException if this team has been unregistered
-     * @return if the entry was a part of this team
      */
-    boolean removeEntry(String entry) throws IllegalStateException, IllegalArgumentException;
+    boolean removeEntry(@NotNull String entry) throws IllegalStateException, IllegalArgumentException;
 
     /**
      * Unregisters this team from the Scoreboard
@@ -253,9 +264,8 @@ public interface Team {
      * @deprecated Teams can contain entries that aren't players
      * @see #hasEntry(String)
      */
-
-    boolean hasPlayer(OfflinePlayer player) throws IllegalArgumentException, IllegalStateException;
-
+    @Deprecated
+    boolean hasPlayer(@NotNull OfflinePlayer player) throws IllegalArgumentException, IllegalStateException;
     /**
      * Checks to see if the specified entry is a member of this team.
      *
@@ -264,7 +274,7 @@ public interface Team {
      * @throws IllegalArgumentException if entry is null
      * @throws IllegalStateException if this team has been unregistered
      */
-    boolean hasEntry(String entry) throws IllegalArgumentException, IllegalStateException;
+    boolean hasEntry(@NotNull String entry) throws IllegalArgumentException, IllegalStateException;
 
     /**
      * Get an option for this team
@@ -273,7 +283,8 @@ public interface Team {
      * @return the option status
      * @throws IllegalStateException if this team has been unregistered
      */
-    OptionStatus getOption(Option option) throws IllegalStateException;
+    @NotNull
+    OptionStatus getOption(@NotNull Option option) throws IllegalStateException;
 
     /**
      * Set an option for this team
@@ -282,7 +293,7 @@ public interface Team {
      * @param status the new option status
      * @throws IllegalStateException if this team has been unregistered
      */
-    void setOption(Option option, OptionStatus status) throws IllegalStateException;
+    void setOption(@NotNull Option option, @NotNull OptionStatus status) throws IllegalStateException;
 
     /**
      * Represents an option which may be applied to this team.

@@ -2,6 +2,7 @@ package org.bukkit.event.server;
 
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a plugin is disabled.
@@ -9,16 +10,18 @@ import org.bukkit.plugin.Plugin;
 public class PluginDisableEvent extends PluginEvent {
     private static final HandlerList handlers = new HandlerList();
 
-    public PluginDisableEvent(final Plugin plugin) {
+    public PluginDisableEvent(@NotNull final Plugin plugin) {
         super(plugin);
     }
 
-    public static HandlerList getHandlerList() {
+    @NotNull
+    @Override
+    public HandlerList getHandlers() {
         return handlers;
     }
 
-    @Override
-    public HandlerList getHandlers() {
+    @NotNull
+    public static HandlerList getHandlerList() {
         return handlers;
     }
 }

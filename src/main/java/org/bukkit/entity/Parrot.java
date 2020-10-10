@@ -1,15 +1,18 @@
 package org.bukkit.entity;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Represents a Parrot.
  */
-public interface Parrot extends Animals, Tameable, Sittable {
+public interface Parrot extends Tameable, Sittable {
 
     /**
      * Get the variant of this parrot.
      *
      * @return parrot variant
      */
+    @NotNull
     public Variant getVariant();
 
     /**
@@ -17,7 +20,7 @@ public interface Parrot extends Animals, Tameable, Sittable {
      *
      * @param variant parrot variant
      */
-    public void setVariant(Variant variant);
+    public void setVariant(@NotNull Variant variant);
 
     /**
      * Represents the variant of a parrot - ie its color.

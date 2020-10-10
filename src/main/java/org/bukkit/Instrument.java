@@ -2,6 +2,7 @@ package org.bukkit;
 
 import com.google.common.collect.Maps;
 import java.util.Map;
+import org.jetbrains.annotations.Nullable;
 
 public enum Instrument {
 
@@ -49,20 +50,46 @@ public enum Instrument {
     /**
      * Xylophone is normally played when a note block is on top of a bone block.
      */
-    XYLOPHONE(0x9);
-
-    private final static Map<Byte, Instrument> BY_DATA = Maps.newHashMap();
-
-    static {
-        for (Instrument instrument : Instrument.values()) {
-            BY_DATA.put(instrument.getType(), instrument);
-        }
-    }
+    XYLOPHONE(0x9),
+    /**
+     * Iron Xylophone is normally played when a note block is on top of a iron block.
+     */
+    IRON_XYLOPHONE(0xA),
+    /**
+     * Cow Bell is normally played when a note block is on top of a soul sand block.
+     */
+    COW_BELL(0xB),
+    /**
+     * Didgeridoo is normally played when a note block is on top of a pumpkin block.
+     */
+    DIDGERIDOO(0xC),
+    /**
+     * Bit is normally played when a note block is on top of a emerald block.
+     */
+    BIT(0xD),
+    /**
+     * Banjo is normally played when a note block is on top of a hay block.
+     */
+    BANJO(0xE),
+    /**
+     * Pling is normally played when a note block is on top of a glowstone block.
+     */
+    PLING(0xF);
 
     private final byte type;
+    private static final Map<Byte, Instrument> BY_DATA = Maps.newHashMap();
 
     private Instrument(final int type) {
         this.type = (byte) type;
+    }
+
+    /**
+     * @return The type ID of this instrument.
+     * @deprecated Magic value
+     */
+    @Deprecated
+    public byte getType() {
+        return this.type;
     }
 
     /**
@@ -72,17 +99,15 @@ public enum Instrument {
      * @return The instrument
      * @deprecated Magic value
      */
-
+    @Deprecated
+    @Nullable
     public static Instrument getByType(final byte type) {
         return BY_DATA.get(type);
     }
 
-    /**
-     * @return The type ID of this instrument.
-     * @deprecated Magic value
-     */
-
-    public byte getType() {
-        return this.type;
+    static {
+        for (Instrument instrument : Instrument.values()) {
+            BY_DATA.put(instrument.getType(), instrument);
+        }
     }
 }

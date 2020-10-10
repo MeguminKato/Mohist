@@ -3,6 +3,7 @@ package org.bukkit.event.player;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Fired when a player's item breaks (such as a shovel or flint and steel).
@@ -14,13 +15,9 @@ public class PlayerItemBreakEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
     private final ItemStack brokenItem;
 
-    public PlayerItemBreakEvent(final Player player, final ItemStack brokenItem) {
+    public PlayerItemBreakEvent(@NotNull final Player player, @NotNull final ItemStack brokenItem) {
         super(player);
         this.brokenItem = brokenItem;
-    }
-
-    public static HandlerList getHandlerList() {
-        return handlers;
     }
 
     /**
@@ -28,12 +25,19 @@ public class PlayerItemBreakEvent extends PlayerEvent {
      *
      * @return The broken item
      */
+    @NotNull
     public ItemStack getBrokenItem() {
         return brokenItem;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    @NotNull
+    public static HandlerList getHandlerList() {
         return handlers;
     }
 }

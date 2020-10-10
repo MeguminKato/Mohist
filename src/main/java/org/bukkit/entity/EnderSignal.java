@@ -1,6 +1,9 @@
 package org.bukkit.entity;
 
 import org.bukkit.Location;
+import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an EnderSignal, which is created upon throwing an ender eye.
@@ -12,6 +15,7 @@ public interface EnderSignal extends Entity {
      *
      * @return the {@link Location} this EnderSignal is moving towards.
      */
+    @NotNull
     public Location getTargetLocation();
 
     /**
@@ -22,7 +26,7 @@ public interface EnderSignal extends Entity {
      *
      * @param location the new target location
      */
-    public void setTargetLocation(Location location);
+    public void setTargetLocation(@NotNull Location location);
 
     /**
      * Gets if the EnderSignal should drop an item on death.<br>
@@ -41,6 +45,23 @@ public interface EnderSignal extends Entity {
      * false if it should shatter.
      */
     public void setDropItem(boolean drop);
+
+    /**
+     * Get the {@link ItemStack} to be displayed while in the air and to be
+     * dropped on death.
+     *
+     * @return the item stack
+     */
+    @NotNull
+    public ItemStack getItem();
+
+    /**
+     * Set the {@link ItemStack} to be displayed while in the air and to be
+     * dropped on death.
+     *
+     * @param item the item to set. If null, resets to the default eye of ender
+     */
+    public void setItem(@Nullable ItemStack item);
 
     /**
      * Gets the amount of time this entity has been alive (in ticks).

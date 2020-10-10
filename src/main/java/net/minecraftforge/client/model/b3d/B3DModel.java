@@ -19,17 +19,10 @@
 
 package net.minecraftforge.client.model.b3d;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableTable;
-import com.google.common.collect.Table;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
@@ -42,22 +35,28 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
+
 import javax.annotation.Nullable;
-import javax.vecmath.Matrix4f;
-import javax.vecmath.Quat4f;
-import javax.vecmath.Vector2f;
-import javax.vecmath.Vector3f;
-import javax.vecmath.Vector4f;
-import net.minecraftforge.common.ForgeVersion;
-import net.minecraftforge.common.model.TRSRTransformation;
+
+import net.minecraft.util.math.vector.*;
+import net.minecraftforge.versions.forge.ForgeVersion;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.function.Function;
+import com.google.common.base.Joiner;
+import java.util.Optional;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableTable;
+import com.google.common.collect.Table;
 
 public class B3DModel
 {
@@ -100,11 +99,11 @@ public class B3DModel
                 int l = ByteBuffer.wrap(tmp).order(ByteOrder.LITTLE_ENDIAN).getInt();
                 if(l < 0 || l + 8 < 0) throw new IOException("File is too large");
                 buf = ByteBuffer.allocate(l + 8).order(ByteOrder.LITTLE_ENDIAN);
-                buf.clear();
+                ((Buffer)buf).clear();
                 buf.put(tag);
                 buf.put(tmp);
                 buf.put(IOUtils.toByteArray(in, l));
-                buf.flip();
+                ((Buffer)buf).flip();
             }
         }
 
@@ -193,7 +192,7 @@ public class B3DModel
             while(buf.get() != 0);
             int end = buf.position();
             byte[] tmp = new byte[end - start - 1];
-            buf.position(start);
+            ((Buffer)buf).position(start);
             buf.get(tmp);
             buf.get();
             return new String(tmp, "UTF8");
@@ -204,12 +203,12 @@ public class B3DModel
         private void pushLimit()
         {
             limitStack.push(buf.limit());
-            buf.limit(buf.position() + length);
+            ((Buffer)buf).limit(buf.position() + length);
         }
 
         private void popLimit()
         {
-            buf.limit(limitStack.pop());
+            ((Buffer)buf).limit(limitStack.pop());
         }
 
         private B3DModel bb3d() throws IOException
@@ -385,7 +384,7 @@ public class B3DModel
             Map<Integer, Key> ret = new HashMap<>();
             int flags = buf.getInt();
             Vector3f pos = null, scale = null;
-            Quat4f rot = null;
+            Quaternion rot = null;
             while(buf.hasRemaining())
             {
                 int frame = buf.getInt();
@@ -452,7 +451,7 @@ public class B3DModel
             String name = readString();
             Vector3f pos = new Vector3f(buf.getFloat(), buf.getFloat(), buf.getFloat());
             Vector3f scale = new Vector3f(buf.getFloat(), buf.getFloat(), buf.getFloat());
-            Quat4f rot = readQuat();
+            Quaternion rot = readQuat();
             dump("NODE(" + name + ", " + pos + ", " + scale + ", " + rot + ") {");
             while(buf.hasRemaining())
             {
@@ -490,18 +489,18 @@ public class B3DModel
             return node;
         }
 
-        private Quat4f readQuat()
+        private Quaternion readQuat()
         {
             float w = buf.getFloat();
             float x = buf.getFloat();
             float y = buf.getFloat();
             float z = buf.getFloat();
-            return new Quat4f(x, y, z, w);
+            return new Quaternion(x, y, z, w);
         }
 
         private void skip()
         {
-            buf.position(buf.position() + length);
+            ((Buffer)buf).position(buf.position() + length);
         }
     }
 
@@ -678,20 +677,21 @@ public class B3DModel
                 else t.setIdentity();
             }
 
-            TRSRTransformation trsr = new TRSRTransformation(t);
+            TransformationMatrix trsr = new TransformationMatrix(t);
 
             // pos
             Vector4f pos = new Vector4f(this.pos);
-            pos.w = 1;
+            pos.setW(1);
             trsr.transformPosition(pos);
-            Vector3f rPos = new Vector3f(pos.x / pos.w, pos.y / pos.w, pos.z / pos.w);
+            pos.normalize();
+            Vector3f rPos = new Vector3f(pos.getX(), pos.getY(), pos.getZ());
 
             // normal
             Vector3f rNormal = null;
 
             if(this.normal != null)
             {
-                rNormal = new Vector3f(this.normal);
+                rNormal = this.normal.copy();
                 trsr.transformNormal(rNormal);
             }
 
@@ -783,12 +783,12 @@ public class B3DModel
 
         public static Vector3f getNormal(Vertex v1, Vertex v2, Vertex v3)
         {
-            Vector3f a = new Vector3f(v2.getPos());
+            Vector3f a = v2.getPos().copy();
             a.sub(v1.getPos());
-            Vector3f b = new Vector3f(v3.getPos());
+            Vector3f b = v3.getPos().copy();
             b.sub(v1.getPos());
-            Vector3f c = new Vector3f();
-            c.cross(a, b);
+            Vector3f c = a.copy();
+            c.cross(b);
             c.normalize();
             return c;
         }
@@ -801,9 +801,9 @@ public class B3DModel
         @Nullable
         private final Vector3f scale;
         @Nullable
-        private final Quat4f rot;
+        private final Quaternion rot;
 
-        public Key(@Nullable Vector3f pos, @Nullable Vector3f scale, @Nullable Quat4f rot)
+        public Key(@Nullable Vector3f pos, @Nullable Vector3f scale, @Nullable Quaternion rot)
         {
             this.pos = pos;
             this.scale = scale;
@@ -823,7 +823,7 @@ public class B3DModel
         }
 
         @Nullable
-        public Quat4f getRot()
+        public Quaternion getRot()
         {
             return rot;
         }
@@ -888,7 +888,7 @@ public class B3DModel
         private final String name;
         private final Vector3f pos;
         private final Vector3f scale;
-        private final Quat4f rot;
+        private final Quaternion rot;
         private final ImmutableMap<String, Node<?>> nodes;
         @Nullable
         private Animation animation;
@@ -896,12 +896,12 @@ public class B3DModel
         @Nullable
         private Node<? extends IKind<?>> parent;
 
-        public static <K extends IKind<K>> Node<K> create(String name, Vector3f pos, Vector3f scale, Quat4f rot, List<Node<?>> nodes, K kind)
+        public static <K extends IKind<K>> Node<K> create(String name, Vector3f pos, Vector3f scale, Quaternion rot, List<Node<?>> nodes, K kind)
         {
             return new Node<>(name, pos, scale, rot, nodes, kind);
         }
 
-        public Node(String name, Vector3f pos, Vector3f scale, Quat4f rot, List<Node<?>> nodes, K kind)
+        public Node(String name, Vector3f pos, Vector3f scale, Quaternion rot, List<Node<?>> nodes, K kind)
         {
             this.name = name;
             this.pos = pos;
@@ -970,7 +970,7 @@ public class B3DModel
             return scale;
         }
 
-        public Quat4f getRot()
+        public Quaternion getRot()
         {
             return rot;
         }

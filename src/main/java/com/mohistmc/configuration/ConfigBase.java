@@ -1,11 +1,11 @@
 package com.mohistmc.configuration;
 
-import com.mohistmc.api.ServerAPI;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -41,7 +41,7 @@ public abstract class ConfigBase
         }
         catch (IOException ex)
         {
-            ServerAPI.getNMSServer().logSevere("Could not save " + configFile);
+            Bukkit.getLogger().info("Could not save " + configFile);
             ex.printStackTrace();
         }
     }

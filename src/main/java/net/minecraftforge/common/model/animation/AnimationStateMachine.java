@@ -26,11 +26,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimaps;
-import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
@@ -40,6 +36,22 @@ import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import net.minecraft.client.renderer.model.IModelTransform;
+import net.minecraft.resources.IResource;
+import net.minecraft.resources.IResourceManager;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.animation.Event;
+import net.minecraftforge.common.animation.ITimeValue;
+import net.minecraftforge.common.animation.TimeValues;
+import net.minecraftforge.common.util.JsonUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.ParameterizedType;
@@ -49,23 +61,10 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import javax.annotation.Nullable;
-import net.minecraft.client.resources.IResource;
-import net.minecraft.client.resources.IResourceManager;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.common.animation.Event;
-import net.minecraftforge.common.animation.ITimeValue;
-import net.minecraftforge.common.animation.TimeValues;
-import net.minecraftforge.common.model.IModelState;
-import net.minecraftforge.common.util.JsonUtils;
-import net.minecraftforge.fml.common.FMLLog;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 
 public final class AnimationStateMachine implements IAnimationStateMachine
 {
+    private static final Logger LOGGER = LogManager.getLogger();
     private final ImmutableMap<String, ITimeValue> parameters;
     private final ImmutableMap<String, IClip> clips;
     private final ImmutableList<String> states;
@@ -78,23 +77,17 @@ public final class AnimationStateMachine implements IAnimationStateMachine
     private transient IClip currentState;
     private transient float lastPollTime;
 
-    private static final LoadingCache<Triple<? extends IClip, Float, Float>, Pair<IModelState, Iterable<Event>>> clipCache = CacheBuilder.newBuilder()
+    private static final LoadingCache<Triple<? extends IClip, Float, Float>, Pair<IModelTransform, Iterable<Event>>> clipCache = CacheBuilder.newBuilder()
         .maximumSize(100)
         .expireAfterWrite(100, TimeUnit.MILLISECONDS)
-        .build(new CacheLoader<Triple<? extends IClip, Float, Float>, Pair<IModelState, Iterable<Event>>>()
+        .build(new CacheLoader<Triple<? extends IClip, Float, Float>, Pair<IModelTransform, Iterable<Event>>>()
         {
             @Override
-            public Pair<IModelState, Iterable<Event>> load(Triple<? extends IClip, Float, Float> key) throws Exception
+            public Pair<IModelTransform, Iterable<Event>> load(Triple<? extends IClip, Float, Float> key) throws Exception
             {
                 return Clips.apply(key.getLeft(), key.getMiddle(), key.getRight());
             }
         });
-
-    @Deprecated
-    public AnimationStateMachine(ImmutableMap<String, ITimeValue> parameters, ImmutableMap<String, IClip> clips, ImmutableList<String> states, ImmutableMap<String, String> transitions, String startState)
-    {
-        this(parameters, clips, states, ImmutableMultimap.copyOf(Multimaps.newSetMultimap(Maps.transformValues(transitions, ImmutableSet::of), Sets::newHashSet)), startState);
-    }
 
     public AnimationStateMachine(ImmutableMap<String, ITimeValue> parameters, ImmutableMap<String, IClip> clips, ImmutableList<String> states, ImmutableMultimap<String, String> transitions, String startState)
     {
@@ -139,13 +132,13 @@ public final class AnimationStateMachine implements IAnimationStateMachine
     }
 
     @Override
-    public Pair<IModelState, Iterable<Event>> apply(float time)
+    public Pair<IModelTransform, Iterable<Event>> apply(float time)
     {
         if(lastPollTime == Float.NEGATIVE_INFINITY)
         {
             lastPollTime = time;
         }
-        Pair<IModelState, Iterable<Event>> pair = clipCache.getUnchecked(Triple.of(currentState, lastPollTime, time));
+        Pair<IModelTransform, Iterable<Event>> pair = clipCache.getUnchecked(Triple.of(currentState, lastPollTime, time));
         lastPollTime = time;
         boolean shouldFilter = false;
         if(shouldHandleSpecialEvents)
@@ -162,7 +155,7 @@ public final class AnimationStateMachine implements IAnimationStateMachine
                     }
                     else
                     {
-                        FMLLog.log.error("Unknown special event \"{}\", ignoring.", event.event());
+                        LOGGER.error("Unknown special event \"{}\", ignoring.", event.event());
                     }
                 }
             }
@@ -212,7 +205,7 @@ public final class AnimationStateMachine implements IAnimationStateMachine
     /**
      * Load a new instance if AnimationStateMachine at specified location, with specified custom parameters.
      */
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public static IAnimationStateMachine load(IResourceManager manager, ResourceLocation location, ImmutableMap<String, ITimeValue> customParameters)
     {
         try (IResource resource = manager.getResource(location))
@@ -231,7 +224,7 @@ public final class AnimationStateMachine implements IAnimationStateMachine
         }
         catch(IOException | JsonParseException e)
         {
-            FMLLog.log.error("Exception loading Animation State Machine {}, skipping", location, e);
+            LOGGER.error("Exception loading Animation State Machine {}, skipping", location, e);
             return missing;
         }
         finally

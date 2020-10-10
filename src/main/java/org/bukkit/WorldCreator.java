@@ -4,6 +4,8 @@ import java.util.Random;
 import org.bukkit.command.CommandSender;
 import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents various types of options that may be used to create a world.
@@ -16,13 +18,14 @@ public class WorldCreator {
     private WorldType type = WorldType.NORMAL;
     private boolean generateStructures = true;
     private String generatorSettings = "";
+    private boolean hardcore = false;
 
     /**
      * Creates an empty WorldCreationOptions for the given world name
      *
      * @param name Name of the world that will be created
      */
-    public WorldCreator(String name) {
+    public WorldCreator(@NotNull String name) {
         if (name == null) {
             throw new IllegalArgumentException("World name cannot be null");
         }
@@ -32,12 +35,304 @@ public class WorldCreator {
     }
 
     /**
+     * Copies the options from the specified world
+     *
+     * @param world World to copy options from
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator copy(@NotNull World world) {
+        if (world == null) {
+            throw new IllegalArgumentException("World cannot be null");
+        }
+
+        seed = world.getSeed();
+        environment = world.getEnvironment();
+        generator = world.getGenerator();
+        type = world.getWorldType();
+        generateStructures = world.canGenerateStructures();
+        hardcore = world.isHardcore();
+
+        return this;
+    }
+
+    /**
+     * Copies the options from the specified {@link WorldCreator}
+     *
+     * @param creator World creator to copy options from
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator copy(@NotNull WorldCreator creator) {
+        if (creator == null) {
+            throw new IllegalArgumentException("Creator cannot be null");
+        }
+
+        seed = creator.seed();
+        environment = creator.environment();
+        generator = creator.generator();
+        type = creator.type();
+        generateStructures = creator.generateStructures();
+        generatorSettings = creator.generatorSettings();
+        hardcore = creator.hardcore();
+
+        return this;
+    }
+
+    /**
+     * Gets the name of the world that is to be loaded or created.
+     *
+     * @return World name
+     */
+    @NotNull
+    public String name() {
+        return name;
+    }
+
+    /**
+     * Gets the seed that will be used to create this world
+     *
+     * @return World seed
+     */
+    public long seed() {
+        return seed;
+    }
+
+    /**
+     * Sets the seed that will be used to create this world
+     *
+     * @param seed World seed
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator seed(long seed) {
+        this.seed = seed;
+
+        return this;
+    }
+
+    /**
+     * Gets the environment that will be used to create or load the world
+     *
+     * @return World environment
+     */
+    @NotNull
+    public World.Environment environment() {
+        return environment;
+    }
+
+    /**
+     * Sets the environment that will be used to create or load the world
+     *
+     * @param env World environment
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator environment(@NotNull World.Environment env) {
+        this.environment = env;
+
+        return this;
+    }
+
+    /**
+     * Gets the type of the world that will be created or loaded
+     *
+     * @return World type
+     */
+    @NotNull
+    public WorldType type() {
+        return type;
+    }
+
+    /**
+     * Sets the type of the world that will be created or loaded
+     *
+     * @param type World type
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator type(@NotNull WorldType type) {
+        this.type = type;
+
+        return this;
+    }
+
+    /**
+     * Gets the generator that will be used to create or load the world.
+     * <p>
+     * This may be null, in which case the "natural" generator for this
+     * environment will be used.
+     *
+     * @return Chunk generator
+     */
+    @Nullable
+    public ChunkGenerator generator() {
+        return generator;
+    }
+
+    /**
+     * Sets the generator that will be used to create or load the world.
+     * <p>
+     * This may be null, in which case the "natural" generator for this
+     * environment will be used.
+     *
+     * @param generator Chunk generator
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator generator(@Nullable ChunkGenerator generator) {
+        this.generator = generator;
+
+        return this;
+    }
+
+    /**
+     * Sets the generator that will be used to create or load the world.
+     * <p>
+     * This may be null, in which case the "natural" generator for this
+     * environment will be used.
+     * <p>
+     * If the generator cannot be found for the given name, the natural
+     * environment generator will be used instead and a warning will be
+     * printed to the console.
+     *
+     * @param generator Name of the generator to use, in "plugin:id" notation
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator generator(@Nullable String generator) {
+        this.generator = getGeneratorForName(name, generator, Bukkit.getConsoleSender());
+
+        return this;
+    }
+
+    /**
+     * Sets the generator that will be used to create or load the world.
+     * <p>
+     * This may be null, in which case the "natural" generator for this
+     * environment will be used.
+     * <p>
+     * If the generator cannot be found for the given name, the natural
+     * environment generator will be used instead and a warning will be
+     * printed to the specified output
+     *
+     * @param generator Name of the generator to use, in "plugin:id" notation
+     * @param output {@link CommandSender} that will receive any error
+     *     messages
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator generator(@Nullable String generator, @Nullable CommandSender output) {
+        this.generator = getGeneratorForName(name, generator, output);
+
+        return this;
+    }
+
+    /**
+     * Sets the generator settings of the world that will be created or loaded.
+     * <p>
+     * Currently only {@link WorldType#FLAT} uses these settings, and expects
+     * them to be in JSON format with a valid biome AND structures (1.16 and
+     * above) defined. Note the occurrence of "structures" twice (nested
+     * compound may be empty, both must exist.). An example valid configuration
+     * is as follows:
+     * <code>{"structures": {"structures": {"village": {"salt": 8015723, "spacing": 32, "separation": 8}}}, "layers": [{"block": "stone", "height": 1}, {"block": "grass", "height": 1}], "biome":"plains"}</code>
+     *
+     * @see <a href="https://minecraft.gamepedia.com/Custom_dimension">Custom
+     * dimension</a> (scroll to "When the generator ID type is
+     * <code>minecraft:flat</code>)"
+     * @param generatorSettings The settings that should be used by the
+     * generator
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator generatorSettings(@NotNull String generatorSettings) {
+        this.generatorSettings = generatorSettings;
+
+        return this;
+    }
+
+    /**
+     * Gets the generator settings of the world that will be created or loaded.
+     *
+     * @return The settings that should be used by the generator
+     * @see #generatorSettings(java.lang.String)
+     */
+    @NotNull
+    public String generatorSettings() {
+        return generatorSettings;
+    }
+
+    /**
+     * Sets whether or not worlds created or loaded with this creator will
+     * have structures.
+     *
+     * @param generate Whether to generate structures
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator generateStructures(boolean generate) {
+        this.generateStructures = generate;
+
+        return this;
+    }
+
+    /**
+     * Gets whether or not structures will be generated in the world.
+     *
+     * @return True if structures will be generated
+     */
+    public boolean generateStructures() {
+        return generateStructures;
+    }
+
+    /**
+     * Sets whether the world will be hardcore or not.
+     *
+     * In a hardcore world the difficulty will be locked to hard.
+     *
+     * @param hardcore Whether the world will be hardcore
+     * @return This object, for chaining
+     */
+    @NotNull
+    public WorldCreator hardcore(boolean hardcore) {
+        this.hardcore = hardcore;
+
+        return this;
+    }
+
+    /**
+     * Gets whether the world will be hardcore or not.
+     *
+     * In a hardcore world the difficulty will be locked to hard.
+     *
+     * @return hardcore status
+     */
+    public boolean hardcore() {
+        return hardcore;
+    }
+
+    /**
+     * Creates a world with the specified options.
+     * <p>
+     * If the world already exists, it will be loaded from disk and some
+     * options may be ignored.
+     *
+     * @return Newly created or loaded world
+     */
+    @Nullable
+    public World createWorld() {
+        return Bukkit.createWorld(this);
+    }
+
+    /**
      * Creates a new {@link WorldCreator} for the given world name
      *
      * @param name Name of the world to load or create
      * @return Resulting WorldCreator
      */
-    public static WorldCreator name(String name) {
+    @NotNull
+    public static WorldCreator name(@NotNull String name) {
         return new WorldCreator(name);
     }
 
@@ -57,7 +352,8 @@ public class WorldCreator {
      * @param output Where to output if errors are present
      * @return Resulting generator, or null
      */
-    public static ChunkGenerator getGeneratorForName(String world, String name, CommandSender output) {
+    @Nullable
+    public static ChunkGenerator getGeneratorForName(@NotNull String world, @Nullable String name, @Nullable CommandSender output) {
         ChunkGenerator result = null;
 
         if (world == null) {
@@ -83,235 +379,5 @@ public class WorldCreator {
         }
 
         return result;
-    }
-
-    /**
-     * Copies the options from the specified world
-     *
-     * @param world World to copy options from
-     * @return This object, for chaining
-     */
-    public WorldCreator copy(World world) {
-        if (world == null) {
-            throw new IllegalArgumentException("World cannot be null");
-        }
-
-        seed = world.getSeed();
-        environment = world.getEnvironment();
-        generator = world.getGenerator();
-
-        return this;
-    }
-
-    /**
-     * Copies the options from the specified {@link WorldCreator}
-     *
-     * @param creator World creator to copy options from
-     * @return This object, for chaining
-     */
-    public WorldCreator copy(WorldCreator creator) {
-        if (creator == null) {
-            throw new IllegalArgumentException("Creator cannot be null");
-        }
-
-        seed = creator.seed();
-        environment = creator.environment();
-        generator = creator.generator();
-
-        return this;
-    }
-
-    /**
-     * Gets the name of the world that is to be loaded or created.
-     *
-     * @return World name
-     */
-    public String name() {
-        return name;
-    }
-
-    /**
-     * Gets the seed that will be used to create this world
-     *
-     * @return World seed
-     */
-    public long seed() {
-        return seed;
-    }
-
-    /**
-     * Sets the seed that will be used to create this world
-     *
-     * @param seed World seed
-     * @return This object, for chaining
-     */
-    public WorldCreator seed(long seed) {
-        this.seed = seed;
-
-        return this;
-    }
-
-    /**
-     * Gets the environment that will be used to create or load the world
-     *
-     * @return World environment
-     */
-    public World.Environment environment() {
-        return environment;
-    }
-
-    /**
-     * Sets the environment that will be used to create or load the world
-     *
-     * @param env World environment
-     * @return This object, for chaining
-     */
-    public WorldCreator environment(World.Environment env) {
-        this.environment = env;
-
-        return this;
-    }
-
-    /**
-     * Gets the type of the world that will be created or loaded
-     *
-     * @return World type
-     */
-    public WorldType type() {
-        return type;
-    }
-
-    /**
-     * Sets the type of the world that will be created or loaded
-     *
-     * @param type World type
-     * @return This object, for chaining
-     */
-    public WorldCreator type(WorldType type) {
-        this.type = type;
-
-        return this;
-    }
-
-    /**
-     * Gets the generator that will be used to create or load the world.
-     * <p>
-     * This may be null, in which case the "natural" generator for this
-     * environment will be used.
-     *
-     * @return Chunk generator
-     */
-    public ChunkGenerator generator() {
-        return generator;
-    }
-
-    /**
-     * Sets the generator that will be used to create or load the world.
-     * <p>
-     * This may be null, in which case the "natural" generator for this
-     * environment will be used.
-     *
-     * @param generator Chunk generator
-     * @return This object, for chaining
-     */
-    public WorldCreator generator(ChunkGenerator generator) {
-        this.generator = generator;
-
-        return this;
-    }
-
-    /**
-     * Sets the generator that will be used to create or load the world.
-     * <p>
-     * This may be null, in which case the "natural" generator for this
-     * environment will be used.
-     * <p>
-     * If the generator cannot be found for the given name, the natural
-     * environment generator will be used instead and a warning will be
-     * printed to the console.
-     *
-     * @param generator Name of the generator to use, in "plugin:id" notation
-     * @return This object, for chaining
-     */
-    public WorldCreator generator(String generator) {
-        this.generator = getGeneratorForName(name, generator, Bukkit.getConsoleSender());
-
-        return this;
-    }
-
-    /**
-     * Sets the generator that will be used to create or load the world.
-     * <p>
-     * This may be null, in which case the "natural" generator for this
-     * environment will be used.
-     * <p>
-     * If the generator cannot be found for the given name, the natural
-     * environment generator will be used instead and a warning will be
-     * printed to the specified output
-     *
-     * @param generator Name of the generator to use, in "plugin:id" notation
-     * @param output {@link CommandSender} that will receive any error
-     *     messages
-     * @return This object, for chaining
-     */
-    public WorldCreator generator(String generator, CommandSender output) {
-        this.generator = getGeneratorForName(name, generator, output);
-
-        return this;
-    }
-
-    /**
-     * Sets the generator settings of the world that will be created or loaded
-     *
-     * @param generatorSettings The settings that should be used by the generator
-     * @return This object, for chaining
-     */
-    public WorldCreator generatorSettings(String generatorSettings) {
-        this.generatorSettings = generatorSettings;
-
-        return this;
-    }
-
-    /**
-     * Gets the generator settings of the world that will be created or loaded
-     *
-     * @return The settings that should be used by the generator
-     */
-    public String generatorSettings() {
-        return generatorSettings;
-    }
-
-    /**
-     * Sets whether or not worlds created or loaded with this creator will
-     * have structures.
-     *
-     * @param generate Whether to generate structures
-     * @return This object, for chaining
-     */
-    public WorldCreator generateStructures(boolean generate) {
-        this.generateStructures = generate;
-
-        return this;
-    }
-
-    /**
-     * Gets whether or not structures will be generated in the world.
-     *
-     * @return True if structures will be generated
-     */
-    public boolean generateStructures() {
-        return generateStructures;
-    }
-
-    /**
-     * Creates a world with the specified options.
-     * <p>
-     * If the world already exists, it will be loaded from disk and some
-     * options may be ignored.
-     *
-     * @return Newly created or loaded world
-     */
-    public World createWorld() {
-        return Bukkit.createWorld(this);
     }
 }

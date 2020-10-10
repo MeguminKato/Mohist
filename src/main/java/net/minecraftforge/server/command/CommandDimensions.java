@@ -19,49 +19,43 @@
 
 package net.minecraftforge.server.command;
 
-import it.unimi.dsi.fastutil.ints.IntSortedSet;
-import java.util.Map;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.command.CommandSource;
+import net.minecraft.command.Commands;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.DimensionType;
-import net.minecraftforge.common.DimensionManager;
+import net.minecraft.world.server.ServerWorld;
 
-public class CommandDimensions extends CommandBase
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import com.mojang.brigadier.builder.ArgumentBuilder;
+
+public class CommandDimensions
 {
-    @Override
-    public String getName()
+    static ArgumentBuilder<CommandSource, ?> register()
     {
-        return "dimensions";
-    }
+        return Commands.literal("dimensions")
+            .requires(cs->cs.hasPermissionLevel(0)) //permission
+            .executes(ctx -> {
+                ctx.getSource().sendFeedback(new TranslationTextComponent("commands.forge.dimensions.list"), true);
+                final Registry<DimensionType> reg = ctx.getSource().func_241861_q().func_243612_b(Registry.field_239698_ad_);
 
-    @Override
-    public String getUsage(ICommandSender sender)
-    {
-        return "commands.forge.dimensions.usage";
-    }
+                Map<ResourceLocation, List<ResourceLocation>> types = new HashMap<>();
+                for (ServerWorld dim : ctx.getSource().getServer().getWorlds()) {
+                    types.computeIfAbsent(reg.getKey(dim.func_230315_m_()), k -> new ArrayList<>()).add(dim.func_234923_W_().func_240901_a_());
+                }
 
-    @Override
-    public int getRequiredPermissionLevel()
-    {
-        return 4;
-    }
-
-    @Override
-    public boolean checkPermission(MinecraftServer server, ICommandSender sender)
-    {
-        return true;
-    }
-
-    @Override
-    public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException
-    {
-        sender.sendMessage(TextComponentHelper.createComponentTranslation(sender, "commands.forge.dimensions.list"));
-        for (Map.Entry<DimensionType, IntSortedSet> entry : DimensionManager.getRegisteredDimensions().entrySet())
-        {
-            sender.sendMessage(new TextComponentString(entry.getKey().getName() + ": " + entry.getValue()));
-        }
+                types.keySet().stream().sorted().forEach(key -> {
+                    ctx.getSource().sendFeedback(new StringTextComponent(key + ": " + types.get(key).stream().map(ResourceLocation::toString).sorted().collect(Collectors.joining(", "))), false);
+                });
+                return 0;
+            });
     }
 }

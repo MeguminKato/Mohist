@@ -19,10 +19,10 @@
 
 package net.minecraftforge.event.entity.living;
 
-import net.minecraft.entity.EntityLivingBase;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
+import net.minecraftforge.eventbus.api.Cancelable;
+import net.minecraft.entity.LivingEntity;
 
 /**
  * LivingFallEvent is fired when an Entity is set to be falling.<br>
@@ -33,7 +33,7 @@ import net.minecraftforge.fml.common.eventhandler.Cancelable;
  * <br>
  * {@link #distance} contains the distance the Entity is to fall. If this event is canceled, this value is set to 0.0F.
  * <br>
- * This event is {@link Cancelable}.<br>
+ * This event is {@link net.minecraftforge.eventbus.api.Cancelable}.<br>
  * If this event is canceled, the Entity does not fall.<br>
  * <br>
  * This event does not have a result. {@link HasResult}<br>
@@ -45,7 +45,7 @@ public class LivingFallEvent extends LivingEvent
 {
     private float distance;
     private float damageMultiplier;
-    public LivingFallEvent(EntityLivingBase entity, float distance, float damageMultiplier)
+    public LivingFallEvent(LivingEntity entity, float distance, float damageMultiplier)
     {
         super(entity);
         this.setDistance(distance);

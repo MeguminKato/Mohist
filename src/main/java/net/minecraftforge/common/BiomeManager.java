@@ -19,192 +19,130 @@
 
 package net.minecraftforge.common;
 
-import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import javax.annotation.Nullable;
-import net.minecraft.init.Biomes;
+
+import com.google.common.collect.ImmutableList;
+
+import net.minecraft.world.biome.Biomes;
+import net.minecraft.util.RegistryKey;
 import net.minecraft.util.WeightedRandom;
 import net.minecraft.world.biome.Biome;
-import net.minecraft.world.biome.BiomeProvider;
-import net.minecraft.world.gen.structure.MapGenVillage;
-import net.minecraftforge.common.util.EnumHelper;
 
 public class BiomeManager
 {
     private static TrackedList<BiomeEntry>[] biomes = setupBiomes();
 
-    public static List<Biome> oceanBiomes = new ArrayList<Biome>();
-
-    public static ArrayList<Biome> strongHoldBiomes = new ArrayList<Biome>();
-    public static ArrayList<Biome> strongHoldBiomesBlackList = new ArrayList<Biome>();
-
-    static
-    {
-        oceanBiomes.add(Biomes.OCEAN);
-        oceanBiomes.add(Biomes.DEEP_OCEAN);
-        oceanBiomes.add(Biomes.FROZEN_OCEAN);
-    }
-
     private static TrackedList<BiomeEntry>[] setupBiomes()
     {
         @SuppressWarnings("unchecked")
         TrackedList<BiomeEntry>[] currentBiomes = new TrackedList[BiomeType.values().length];
-        List<BiomeEntry> list = new ArrayList<BiomeEntry>();
 
-        list.add(new BiomeEntry(Biomes.FOREST, 10));
-        list.add(new BiomeEntry(Biomes.ROOFED_FOREST, 10));
-        list.add(new BiomeEntry(Biomes.EXTREME_HILLS, 10));
-        list.add(new BiomeEntry(Biomes.PLAINS, 10));
-        list.add(new BiomeEntry(Biomes.BIRCH_FOREST, 10));
-        list.add(new BiomeEntry(Biomes.SWAMPLAND, 10));
+        currentBiomes[BiomeType.DESERT_LEGACY.ordinal()] = new TrackedList<>(
+            new BiomeEntry(Biomes.DESERT, 10),
+            new BiomeEntry(Biomes.FOREST, 10),
+            new BiomeEntry(Biomes.MOUNTAINS, 10),
+            new BiomeEntry(Biomes.SWAMP, 10),
+            new BiomeEntry(Biomes.PLAINS, 10),
+            new BiomeEntry(Biomes.TAIGA, 10)
+        );
 
-        currentBiomes[BiomeType.WARM.ordinal()] = new TrackedList<BiomeEntry>(list);
-        list.clear();
+        currentBiomes[BiomeType.DESERT.ordinal()] = new TrackedList<>(
+            new BiomeEntry(Biomes.DESERT, 30),
+            new BiomeEntry(Biomes.SAVANNA, 20),
+            new BiomeEntry(Biomes.PLAINS, 10)
+        );
 
-        list.add(new BiomeEntry(Biomes.FOREST, 10));
-        list.add(new BiomeEntry(Biomes.EXTREME_HILLS, 10));
-        list.add(new BiomeEntry(Biomes.TAIGA, 10));
-        list.add(new BiomeEntry(Biomes.PLAINS, 10));
+        currentBiomes[BiomeType.WARM.ordinal()] = new TrackedList<>(
+            new BiomeEntry(Biomes.FOREST, 10),
+            new BiomeEntry(Biomes.DARK_FOREST, 10),
+            new BiomeEntry(Biomes.MOUNTAINS, 10),
+            new BiomeEntry(Biomes.PLAINS, 10),
+            new BiomeEntry(Biomes.BIRCH_FOREST, 10),
+            new BiomeEntry(Biomes.SWAMP, 10)
+        );
 
-        currentBiomes[BiomeType.COOL.ordinal()] = new TrackedList<BiomeEntry>(list);
-        list.clear();
+        currentBiomes[BiomeType.COOL.ordinal()] = new TrackedList<>(
+            new BiomeEntry(Biomes.FOREST, 10),
+            new BiomeEntry(Biomes.MOUNTAINS, 10),
+            new BiomeEntry(Biomes.TAIGA, 10),
+            new BiomeEntry(Biomes.PLAINS, 10)
+        );
 
-        list.add(new BiomeEntry(Biomes.ICE_PLAINS, 30));
-        list.add(new BiomeEntry(Biomes.COLD_TAIGA, 10));
-
-        currentBiomes[BiomeType.ICY.ordinal()] = new TrackedList<BiomeEntry>(list);
-        list.clear();
-
-        currentBiomes[BiomeType.DESERT.ordinal()] = new TrackedList<BiomeEntry>(list);
+        currentBiomes[BiomeType.ICY.ordinal()] = new TrackedList<>(
+            new BiomeEntry(Biomes.SNOWY_TUNDRA, 30),
+            new BiomeEntry(Biomes.SNOWY_TAIGA, 10)
+        );
 
         return currentBiomes;
     }
 
-    public static void addVillageBiome(Biome biome, boolean canSpawn)
-    {
-        if (!MapGenVillage.VILLAGE_SPAWN_BIOMES.contains(biome))
-        {
-            ArrayList<Biome> biomes = new ArrayList<Biome>(MapGenVillage.VILLAGE_SPAWN_BIOMES);
-            biomes.add(biome);
-            MapGenVillage.VILLAGE_SPAWN_BIOMES = biomes;
-        }
-    }
-
-    public static void removeVillageBiome(Biome biome)
-    {
-        if (MapGenVillage.VILLAGE_SPAWN_BIOMES.contains(biome))
-        {
-            ArrayList<Biome> biomes = new ArrayList<Biome>(MapGenVillage.VILLAGE_SPAWN_BIOMES);
-            biomes.remove(biome);
-            MapGenVillage.VILLAGE_SPAWN_BIOMES = biomes;
-        }
-    }
-
-    public static void addStrongholdBiome(Biome biome)
-    {
-        if (!strongHoldBiomes.contains(biome))
-        {
-            strongHoldBiomes.add(biome);
-        }
-    }
-
-    public static void removeStrongholdBiome(Biome biome)
-    {
-        if (!strongHoldBiomesBlackList.contains(biome))
-        {
-            strongHoldBiomesBlackList.add(biome);
-        }
-    }
-
+    /*
     public static void addSpawnBiome(Biome biome)
     {
-        if (!BiomeProvider.allowedBiomes.contains(biome))
+        if (!BiomeProvider.BIOMES_TO_SPAWN_IN.contains(biome))
         {
-            BiomeProvider.allowedBiomes.add(biome);
+            BiomeProvider.BIOMES_TO_SPAWN_IN.add(biome);
         }
     }
 
     public static void removeSpawnBiome(Biome biome)
     {
-        if (BiomeProvider.allowedBiomes.contains(biome))
+        if (BiomeProvider.BIOMES_TO_SPAWN_IN.contains(biome))
         {
-            BiomeProvider.allowedBiomes.remove(biome);
+            BiomeProvider.BIOMES_TO_SPAWN_IN.remove(biome);
         }
     }
+    */
 
-    public static void addBiome(BiomeType type, BiomeEntry entry)
+    public static boolean addBiome(BiomeType type, BiomeEntry entry)
     {
         int idx = type.ordinal();
         List<BiomeEntry> list = idx > biomes.length ? null : biomes[idx];
-        if (list != null) list.add(entry);
+        return list == null ? false : list.add(entry);
     }
 
-    public static void removeBiome(BiomeType type, BiomeEntry entry)
+    public static boolean removeBiome(BiomeType type, BiomeEntry entry)
     {
         int idx = type.ordinal();
         List<BiomeEntry> list = idx > biomes.length ? null : biomes[idx];
-
-        if (list != null && list.contains(entry))
-        {
-            list.remove(entry);
-        }
+        return list == null ? false : list.remove(entry);
     }
 
-    @Nullable
     public static ImmutableList<BiomeEntry> getBiomes(BiomeType type)
     {
         int idx = type.ordinal();
         List<BiomeEntry> list = idx >= biomes.length ? null : biomes[idx];
-
-        return list != null ? ImmutableList.copyOf(list) : null;
+        return list != null ? ImmutableList.copyOf(list) : ImmutableList.of();
     }
 
     public static boolean isTypeListModded(BiomeType type)
     {
         int idx = type.ordinal();
         TrackedList<BiomeEntry> list = idx > biomes.length ? null : biomes[idx];
-
-        if (list != null) return list.isModded();
-
-        return false;
+        return list == null ? false : list.isModded();
     }
 
     public static enum BiomeType
     {
-        DESERT, WARM, COOL, ICY;
-
-        public static BiomeType getType(String name)
-        {
-            name = name.toUpperCase();
-
-            for (BiomeType t : values())
-            {
-                if (t.name().equals(name)) return t;
-            }
-
-            BiomeType ret = EnumHelper.addEnum(BiomeType.class, name, new Class[0], new Object[0]);
-
-            if (ret.ordinal() >= biomes.length)
-            {
-                biomes = Arrays.copyOf(biomes, ret.ordinal() + 1);
-            }
-
-            return ret;
-        }
+        DESERT, DESERT_LEGACY, WARM, COOL, ICY;
     }
 
     public static class BiomeEntry extends WeightedRandom.Item
     {
-        public final Biome biome;
+        private final RegistryKey<Biome> key;
 
-        public BiomeEntry(Biome biome, int weight)
+        public BiomeEntry(RegistryKey<Biome> key, int weight)
         {
             super(weight);
+            this.key = key;
+        }
 
-            this.biome = biome;
+        public RegistryKey<Biome> getKey()
+        {
+            return this.key;
         }
     }
 
@@ -213,9 +151,10 @@ public class BiomeManager
         private static final long serialVersionUID = 1L;
         private boolean isModded = false;
 
-        public TrackedList(Collection<? extends E> c)
+        @SafeVarargs
+        private <T extends E> TrackedList(T... c)
         {
-            super(c);
+            super(Arrays.asList(c));
         }
 
         @Override

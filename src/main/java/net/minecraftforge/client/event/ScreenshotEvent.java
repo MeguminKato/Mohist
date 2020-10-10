@@ -19,12 +19,14 @@
 
 package net.minecraftforge.client.event;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
+import net.minecraft.client.renderer.texture.NativeImage;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
-import net.minecraftforge.fml.common.eventhandler.Event;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraftforge.eventbus.api.Cancelable;
+import net.minecraftforge.eventbus.api.Event;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * This event is fired before and after a screenshot is taken
@@ -32,27 +34,30 @@ import net.minecraftforge.fml.common.eventhandler.Event;
  * This event is {@link Cancelable}
  *
  * {@link #screenshotFile} contains the file the screenshot will be/was saved to
- * {@link #image} contains the {@link BufferedImage} that will be saved
+ * {@link #image} contains the {@link NativeImage} that will be saved
  * {@link #resultMessage} contains the {@link ITextComponent} to be returned. If {@code null}, the default vanilla message will be used instead
  */
 @Cancelable
 public class ScreenshotEvent extends Event
 {
 
-    public static final ITextComponent DEFAULT_CANCEL_REASON = new TextComponentString("Screenshot canceled");
+    public static final ITextComponent DEFAULT_CANCEL_REASON = new StringTextComponent("Screenshot canceled");
 
-    private BufferedImage image;
+    private NativeImage image;
     private File screenshotFile;
 
     private ITextComponent resultMessage = null;
 
-    public ScreenshotEvent(BufferedImage image, File screenshotFile)
+    public ScreenshotEvent(NativeImage image, File screenshotFile)
     {
         this.image = image;
         this.screenshotFile = screenshotFile;
+        try {
+            this.screenshotFile = screenshotFile.getCanonicalFile(); // FORGE: Fix errors on Windows with paths that include \.\
+        } catch (IOException e) {}
     }
 
-    public BufferedImage getImage()
+    public NativeImage getImage()
     {
         return image;
     }

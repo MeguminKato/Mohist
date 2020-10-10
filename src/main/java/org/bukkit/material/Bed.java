@@ -5,14 +5,18 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents a bed.
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Bed extends MaterialData implements Directional {
 
     /**
      * Default constructor for a bed.
      */
     public Bed() {
-        super(Material.BED_BLOCK);
+        super(Material.LEGACY_BED_BLOCK);
     }
 
     /**
@@ -25,28 +29,8 @@ public class Bed extends MaterialData implements Directional {
         setFacingDirection(direction);
     }
 
-    /**
-     *
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-
-    public Bed(final int type) {
-        super(type);
-    }
-
     public Bed(final Material type) {
         super(type);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-
-    public Bed(final int type, final byte data) {
-        super(type, data);
     }
 
     /**
@@ -54,7 +38,7 @@ public class Bed extends MaterialData implements Directional {
      * @param data the raw data value
      * @deprecated Magic value
      */
-
+    @Deprecated
     public Bed(final Material type, final byte data) {
         super(type, data);
     }
@@ -81,25 +65,26 @@ public class Bed extends MaterialData implements Directional {
      * Set which direction the head of the bed is facing. Note that this will
      * only affect one of the two blocks the bed is made of.
      */
+    @Override
     public void setFacingDirection(BlockFace face) {
         byte data;
 
         switch (face) {
-            case SOUTH:
-                data = 0x0;
-                break;
+        case SOUTH:
+            data = 0x0;
+            break;
 
-            case WEST:
-                data = 0x1;
-                break;
+        case WEST:
+            data = 0x1;
+            break;
 
-            case NORTH:
-                data = 0x2;
-                break;
+        case NORTH:
+            data = 0x2;
+            break;
 
-            case EAST:
-            default:
-                data = 0x3;
+        case EAST:
+        default:
+            data = 0x3;
         }
 
         if (isHeadOfBed()) {
@@ -114,22 +99,23 @@ public class Bed extends MaterialData implements Directional {
      *
      * @return the direction the head of the bed is facing
      */
+    @Override
     public BlockFace getFacing() {
         byte data = (byte) (getData() & 0x7);
 
         switch (data) {
-            case 0x0:
-                return BlockFace.SOUTH;
+        case 0x0:
+            return BlockFace.SOUTH;
 
-            case 0x1:
-                return BlockFace.WEST;
+        case 0x1:
+            return BlockFace.WEST;
 
-            case 0x2:
-                return BlockFace.NORTH;
+        case 0x2:
+            return BlockFace.NORTH;
 
-            case 0x3:
-            default:
-                return BlockFace.EAST;
+        case 0x3:
+        default:
+            return BlockFace.EAST;
         }
     }
 

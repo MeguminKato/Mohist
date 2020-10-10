@@ -19,14 +19,15 @@
 
 package net.minecraftforge.event.entity.player;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraftforge.eventbus.api.Cancelable;
+import net.minecraftforge.eventbus.api.Event;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
-import net.minecraftforge.fml.common.eventhandler.Event;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * This event is fired when a player attempts to use a Empty bucket, it
@@ -49,7 +50,7 @@ public class FillBucketEvent extends PlayerEvent
 
     private ItemStack result;
 
-    public FillBucketEvent(EntityPlayer player, @Nonnull ItemStack current, World world, @Nullable RayTraceResult target)
+    public FillBucketEvent(PlayerEntity player, @Nonnull ItemStack current, World world, @Nullable RayTraceResult target)
     {
         super(player);
         this.current = current;

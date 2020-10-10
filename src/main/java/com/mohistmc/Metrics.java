@@ -23,10 +23,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.spigotmc.SpigotConfig;
 import com.mohistmc.api.ServerAPI;
 import com.mohistmc.common.async.MohistThreadBox;
-import com.mohistmc.configuration.MohistConfig;
 
 /**
  * bStats collects some data for plugin authors.
@@ -39,7 +37,7 @@ public class Metrics {
     private final String serverUUID;
     private final List<CustomChart> charts = new ArrayList<>();
 
-    public Metrics(String name, String serverUUID, boolean logFailedRequests) {
+    public Metrics(String name, String serverUUID) {
             this.name = name;
             this.serverUUID = serverUUID;
 
@@ -221,7 +219,7 @@ public class Metrics {
 
     public static class MohistMetrics {
         public static void startMetrics() {
-            File configFile = new File(new File((File) MinecraftServer.getServerInst().options.valueOf("plugins"), "bStats"), "config.yml");
+            File configFile = new File(new File((File) MinecraftServer.getServer().options.valueOf("plugins"), "bStats"), "config.yml");
             YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
 
             if (!config.isSet("serverUuid")) {
@@ -239,23 +237,22 @@ public class Metrics {
             }
 
             String serverUUID = config.getString("serverUuid");
-            boolean logFailedRequests = config.getBoolean("logFailedRequests", false);
 
             if (config.getBoolean("enabled", true)) {
-                Metrics metrics = new Metrics("Mohist", serverUUID, logFailedRequests);
+                Metrics metrics = new Metrics("Mohist", serverUUID);
 
-                metrics.addCustomChart(new Metrics.SimplePie("minecraft_version", () -> {
+                metrics.addCustomChart(new SimplePie("minecraft_version", () -> {
                     String minecraftVersion = Bukkit.getVersion();
                     minecraftVersion = minecraftVersion.substring(minecraftVersion.indexOf("MC: ") + 4, minecraftVersion.length() - 1);
                     return minecraftVersion;
                 }));
 
-                metrics.addCustomChart(new Metrics.SingleLineChart("players", () -> Bukkit.getOnlinePlayers().size()));
-                metrics.addCustomChart(new Metrics.SimplePie("online_mode", () -> Bukkit.getOnlineMode() ? "online" : "offline"));
-                metrics.addCustomChart(new Metrics.SimplePie("mohist_version", MohistMC::getVersion));
-                metrics.addCustomChart(new Metrics.SimplePie("bungeecord", () -> SpigotConfig.bungee || MohistConfig.isProxyOnlineMode() ? "true" : "false"));
+                metrics.addCustomChart(new SingleLineChart("players", () -> Bukkit.getOnlinePlayers().size()));
+                metrics.addCustomChart(new SimplePie("online_mode", () -> Bukkit.getOnlineMode() ? "online" : "offline"));
+                metrics.addCustomChart(new SimplePie("mohist_version", MohistMC::getVersion));
+                metrics.addCustomChart(new SimplePie("bungeecord", () -> "false"));
 
-                metrics.addCustomChart(new Metrics.DrilldownPie("java_version", () -> {
+                metrics.addCustomChart(new DrilldownPie("java_version", () -> {
                     Map<String, Map<String, Integer>> map = new HashMap<>();
                     String javaVersion = System.getProperty("java.version");
                     Map<String, Integer> entry = new HashMap<>();
@@ -279,7 +276,7 @@ public class Metrics {
                     return map;
                 }));
 
-                metrics.addCustomChart(new Metrics.DrilldownPie("mod_plugin", () -> {
+                metrics.addCustomChart(new DrilldownPie("mod_plugin", () -> {
                     Map<String, Map<String, Integer>> map = new HashMap<>();
 
                     Map<String, Integer> modslist = new HashMap<>();

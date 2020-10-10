@@ -19,16 +19,16 @@
 
 package net.minecraftforge.common.model.animation;
 
+import net.minecraft.util.math.vector.TransformationMatrix;
+
 import java.util.Optional;
-import net.minecraftforge.common.model.IModelPart;
-import net.minecraftforge.common.model.TRSRTransformation;
 
 /**
  * Model part that's a part of the hierarchical skeleton.
  */
-public interface IJoint extends IModelPart
+public interface IJoint
 {
-    TRSRTransformation getInvBindPose();
+    TransformationMatrix getInvBindPose();
 
     Optional<? extends IJoint> getParent();
 }

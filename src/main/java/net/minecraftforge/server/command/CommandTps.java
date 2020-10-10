@@ -20,95 +20,62 @@
 package net.minecraftforge.server.command;
 
 import java.text.DecimalFormat;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.server.MinecraftServer;
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.command.CommandSource;
+import net.minecraft.command.Commands;
+import net.minecraft.command.arguments.DimensionArgument;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.DimensionType;
-import net.minecraft.world.WorldServer;
-import net.minecraftforge.common.DimensionManager;
+import net.minecraft.world.server.ServerWorld;
 
-class CommandTps extends CommandBase
+class CommandTps
 {
     private static final DecimalFormat TIME_FORMATTER = new DecimalFormat("########0.000");
+    private static final long[] UNLOADED = new long[] {0};
 
-    @Override
-    public String getName()
+    static ArgumentBuilder<CommandSource, ?> register()
     {
-        return "tps";
-    }
+        return Commands.literal("tps")
+            .requires(cs->cs.hasPermissionLevel(0)) //permission
+            .then(Commands.argument("dim", DimensionArgument.getDimension())
+                .executes(ctx -> sendTime(ctx.getSource(), DimensionArgument.getDimensionArgument(ctx, "dim")))
+            )
+            .executes(ctx -> {
+                for (ServerWorld dim : ctx.getSource().getServer().getWorlds())
+                    sendTime(ctx.getSource(), dim);
 
-    @Override
-    public String getUsage(ICommandSender sender)
-    {
-        return "commands.forge.tps.usage";
-    }
+                @SuppressWarnings("resource")
+                double meanTickTime = mean(ctx.getSource().getServer().tickTimeArray) * 1.0E-6D;
+                double meanTPS = Math.min(1000.0/meanTickTime, 20);
+                ctx.getSource().sendFeedback(new TranslationTextComponent("commands.forge.tps.summary.all", TIME_FORMATTER.format(meanTickTime), TIME_FORMATTER.format(meanTPS)), false);
 
-    @Override
-    public int getRequiredPermissionLevel()
-    {
-        return 4;
-    }
-
-    @Override
-    public boolean checkPermission(MinecraftServer server, ICommandSender sender)
-    {
-        return true;
-    }
-
-    @Override
-    public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException
-    {
-        int dim = 0;
-        boolean summary = true;
-        if (args.length > 0)
-        {
-            dim = parseInt(args[0]);
-            summary = false;
-        }
-
-        if (summary)
-        {
-            for (Integer dimId : DimensionManager.getIDs())
-            {
-                double worldTickTime = mean(server.worldTickTimes.get(dimId)) * 1.0E-6D;
-                double worldTPS = Math.min(1000.0/worldTickTime, 20);
-                sender.sendMessage(TextComponentHelper.createComponentTranslation(sender, "commands.forge.tps.summary", getDimensionPrefix(dimId), TIME_FORMATTER.format(worldTickTime), TIME_FORMATTER.format(worldTPS)));
+                return 0;
             }
-            double meanTickTime = mean(server.tickTimeArray) * 1.0E-6D;
-            double meanTPS = Math.min(1000.0/meanTickTime, 20);
-            sender.sendMessage(TextComponentHelper.createComponentTranslation(sender, "commands.forge.tps.summary","Overall", TIME_FORMATTER.format(meanTickTime), TIME_FORMATTER.format(meanTPS)));
-        }
-        else
-        {
-            double worldTickTime = mean(server.worldTickTimes.get(dim)) * 1.0E-6D;
-            double worldTPS = Math.min(1000.0/worldTickTime, 20);
-            sender.sendMessage(TextComponentHelper.createComponentTranslation(sender, "commands.forge.tps.summary", getDimensionPrefix(dim), TIME_FORMATTER.format(worldTickTime), TIME_FORMATTER.format(worldTPS)));
-        }
+        );
     }
 
-    private static String getDimensionPrefix(int dimId)
+    private static int sendTime(CommandSource cs, ServerWorld dim) throws CommandSyntaxException
     {
-        DimensionType providerType = DimensionManager.getProviderType(dimId);
-        WorldServer world = DimensionManager.getWorld(dimId);
-        String wn = world.getWorldInfo().getWorldName();
-        if (providerType == null)
-        {
-            return String.format("Dim %2d", dimId);
-        }
-        else
-        {
-            return String.format("Dim %2d (%s)("+ wn+")", dimId, providerType.getName());
-        }
+        long[] times = cs.getServer().getTickTime(dim.func_234923_W_());
+
+        if (times == null) // Null means the world is unloaded. Not invalid. That's taken car of by DimensionArgument itself.
+            times = UNLOADED;
+
+        final Registry<DimensionType> reg = cs.func_241861_q().func_243612_b(Registry.field_239698_ad_);
+        double worldTickTime = mean(times) * 1.0E-6D;
+        double worldTPS = Math.min(1000.0 / worldTickTime, 20);
+        cs.sendFeedback(new TranslationTextComponent("commands.forge.tps.summary.named", dim.func_234923_W_().func_240901_a_().toString(), reg.getKey(dim.func_230315_m_()), TIME_FORMATTER.format(worldTickTime), TIME_FORMATTER.format(worldTPS)), false);
+
+        return 1;
     }
 
     private static long mean(long[] values)
     {
         long sum = 0L;
         for (long v : values)
-        {
             sum += v;
-        }
         return sum / values.length;
     }
 }

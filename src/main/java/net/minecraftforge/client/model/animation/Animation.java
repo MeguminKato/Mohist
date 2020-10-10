@@ -19,8 +19,9 @@
 
 package net.minecraftforge.client.model.animation;
 
-import java.lang.ref.WeakReference;
 import net.minecraft.world.World;
+
+import java.lang.ref.WeakReference;
 
 public enum Animation
 {
@@ -46,10 +47,10 @@ public enum Animation
     {
         if (worldRef == null || worldRef.get() != world)
         {
-            epochTime = world.getTotalWorldTime();
+            epochTime = world.getGameTime();
             worldRef = new WeakReference<>(world);
         }
-        return (world.getTotalWorldTime() - epochTime + tickProgress) / 20;
+        return (world.getGameTime() - epochTime + tickProgress) / 20;
     }
 
     /**

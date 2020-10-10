@@ -6,10 +6,18 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.player.PlayerCommandSendEvent;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a {@link CommandSender} of any description (ie: player or
  * console) attempts to tab complete.
+ * <br>
+ * Note that due to client changes, if the sender is a Player, this event will
+ * only begin to fire once command arguments are specified, not commands
+ * themselves. Plugins wishing to remove commands from tab completion are
+ * advised to ensure the client does not have permission for the relevant
+ * commands, or use {@link PlayerCommandSendEvent}.
  */
 public class TabCompleteEvent extends Event implements Cancellable {
 
@@ -20,7 +28,7 @@ public class TabCompleteEvent extends Event implements Cancellable {
     private List<String> completions;
     private boolean cancelled;
 
-    public TabCompleteEvent(CommandSender sender, String buffer, List<String> completions) {
+    public TabCompleteEvent(@NotNull CommandSender sender, @NotNull String buffer, @NotNull List<String> completions) {
         Validate.notNull(sender, "sender");
         Validate.notNull(buffer, "buffer");
         Validate.notNull(completions, "completions");
@@ -30,15 +38,12 @@ public class TabCompleteEvent extends Event implements Cancellable {
         this.completions = completions;
     }
 
-    public static HandlerList getHandlerList() {
-        return handlers;
-    }
-
     /**
      * Get the sender completing this command.
      *
      * @return the {@link CommandSender} instance
      */
+    @NotNull
     public CommandSender getSender() {
         return sender;
     }
@@ -48,6 +53,7 @@ public class TabCompleteEvent extends Event implements Cancellable {
      *
      * @return command buffer, as entered
      */
+    @NotNull
     public String getBuffer() {
         return buffer;
     }
@@ -58,6 +64,7 @@ public class TabCompleteEvent extends Event implements Cancellable {
      *
      * @return a list of offered completions
      */
+    @NotNull
     public List<String> getCompletions() {
         return completions;
     }
@@ -67,7 +74,7 @@ public class TabCompleteEvent extends Event implements Cancellable {
      *
      * @param completions the new completions
      */
-    public void setCompletions(List<String> completions) {
+    public void setCompletions(@NotNull List<String> completions) {
         Validate.notNull(completions);
         this.completions = completions;
     }
@@ -82,8 +89,14 @@ public class TabCompleteEvent extends Event implements Cancellable {
         this.cancelled = cancelled;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    @NotNull
+    public static HandlerList getHandlerList() {
         return handlers;
     }
 }

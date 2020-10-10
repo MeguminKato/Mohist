@@ -3,6 +3,7 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Sent when an entity's gliding status is toggled with an Elytra.
@@ -15,16 +16,13 @@ import org.bukkit.event.HandlerList;
  */
 public class EntityToggleGlideEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-    private final boolean isGliding;
-    private boolean cancel = false;
 
-    public EntityToggleGlideEvent(LivingEntity who, final boolean isGliding) {
+    private boolean cancel = false;
+    private final boolean isGliding;
+
+    public EntityToggleGlideEvent(@NotNull LivingEntity who, final boolean isGliding) {
         super(who);
         this.isGliding = isGliding;
-    }
-
-    public static HandlerList getHandlerList() {
-        return handlers;
     }
 
     @Override
@@ -41,8 +39,14 @@ public class EntityToggleGlideEvent extends EntityEvent implements Cancellable {
         return isGliding;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    @NotNull
+    public static HandlerList getHandlerList() {
         return handlers;
     }
 

@@ -19,11 +19,12 @@
 
 package net.minecraftforge.event.entity.player;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayer.SleepResult;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerEntity.SleepResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
+
+import java.util.Optional;
 
 /**
  * PlayerSleepInBedEvent is fired when a player sleeps in a bed.
@@ -33,8 +34,6 @@ import net.minecraftforge.fml.common.eventhandler.Cancelable;
  * <br>
  * {@link #result} contains whether the player is able to sleep. <br>
  * <br>
- * This event is not {@link Cancelable}.
- * <br>
  * This event does not have a result. {@link HasResult}
  * <br>
  * This event is fired on the {@link MinecraftForge#EVENT_BUS}.
@@ -42,9 +41,9 @@ import net.minecraftforge.fml.common.eventhandler.Cancelable;
 public class PlayerSleepInBedEvent extends PlayerEvent
 {
     private SleepResult result = null;
-    private final BlockPos pos;
+    private final Optional<BlockPos> pos;
 
-    public PlayerSleepInBedEvent(EntityPlayer player, BlockPos pos)
+    public PlayerSleepInBedEvent(PlayerEntity player, Optional<BlockPos> pos)
     {
         super(player);
         this.pos = pos;
@@ -62,6 +61,11 @@ public class PlayerSleepInBedEvent extends PlayerEvent
 
     public BlockPos getPos()
     {
+        return pos.orElse(null);
+    }
+
+    public Optional<BlockPos> getOptionalPos() {
         return pos;
     }
+
 }

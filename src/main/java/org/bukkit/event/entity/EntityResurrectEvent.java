@@ -3,6 +3,7 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an entity dies and may have the opportunity to be resurrected.
@@ -15,14 +16,11 @@ public class EntityResurrectEvent extends EntityEvent implements Cancellable {
     //
     private boolean cancelled;
 
-    public EntityResurrectEvent(LivingEntity what) {
+    public EntityResurrectEvent(@NotNull LivingEntity what) {
         super(what);
     }
 
-    public static HandlerList getHandlerList() {
-        return handlers;
-    }
-
+    @NotNull
     @Override
     public LivingEntity getEntity() {
         return (LivingEntity) entity;
@@ -38,8 +36,14 @@ public class EntityResurrectEvent extends EntityEvent implements Cancellable {
         this.cancelled = cancelled;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    @NotNull
+    public static HandlerList getHandlerList() {
         return handlers;
     }
 }

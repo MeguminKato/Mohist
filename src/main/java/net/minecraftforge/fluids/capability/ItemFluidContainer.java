@@ -19,13 +19,14 @@
 
 package net.minecraftforge.fluids.capability;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * A simple fluid container, to replace the functionality of the old FluidContainerRegistry and IFluidContainerItem.
@@ -39,13 +40,14 @@ public class ItemFluidContainer extends Item
     /**
      * @param capacity   The maximum capacity of this fluid container.
      */
-    public ItemFluidContainer(int capacity)
+    public ItemFluidContainer(Item.Properties properties, int capacity)
     {
+        super(properties);
         this.capacity = capacity;
     }
 
     @Override
-    public ICapabilityProvider initCapabilities(@Nonnull ItemStack stack, @Nullable NBTTagCompound nbt)
+    public ICapabilityProvider initCapabilities(@Nonnull ItemStack stack, @Nullable CompoundNBT nbt)
     {
         return new FluidHandlerItemStack(stack, capacity);
     }

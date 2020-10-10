@@ -19,13 +19,11 @@
 
 package net.minecraftforge.energy;
 
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTTagInt;
-import net.minecraft.util.EnumFacing;
-import net.minecraftforge.common.capabilities.Capability;
+import net.minecraft.nbt.INBT;
+import net.minecraft.nbt.IntNBT;
+import net.minecraft.util.Direction;
+import net.minecraftforge.common.capabilities.*;
 import net.minecraftforge.common.capabilities.Capability.IStorage;
-import net.minecraftforge.common.capabilities.CapabilityInject;
-import net.minecraftforge.common.capabilities.CapabilityManager;
 
 public class CapabilityEnergy
 {
@@ -37,17 +35,17 @@ public class CapabilityEnergy
         CapabilityManager.INSTANCE.register(IEnergyStorage.class, new IStorage<IEnergyStorage>()
         {
             @Override
-            public NBTBase writeNBT(Capability<IEnergyStorage> capability, IEnergyStorage instance, EnumFacing side)
+            public INBT writeNBT(Capability<IEnergyStorage> capability, IEnergyStorage instance, Direction side)
             {
-                return new NBTTagInt(instance.getEnergyStored());
+                return IntNBT.valueOf(instance.getEnergyStored());
             }
 
             @Override
-            public void readNBT(Capability<IEnergyStorage> capability, IEnergyStorage instance, EnumFacing side, NBTBase nbt)
+            public void readNBT(Capability<IEnergyStorage> capability, IEnergyStorage instance, Direction side, INBT nbt)
             {
                 if (!(instance instanceof EnergyStorage))
                     throw new IllegalArgumentException("Can not deserialize to an instance that isn't the default implementation");
-                ((EnergyStorage)instance).energy = ((NBTTagInt)nbt).getInt();
+                ((EnergyStorage)instance).energy = ((IntNBT)nbt).getInt();
             }
         },
         () -> new EnergyStorage(1000));

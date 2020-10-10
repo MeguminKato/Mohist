@@ -19,6 +19,11 @@
 
 package net.minecraftforge.common.util;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.List;
+import java.util.Map;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.reflect.TypeParameter;
@@ -31,14 +36,12 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.JsonSyntaxException;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.List;
-import java.util.Map;
-import javax.annotation.Nullable;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+
 import net.minecraft.nbt.JsonToNBT;
-import net.minecraft.nbt.NBTException;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
+
+import javax.annotation.Nullable;
 
 public class JsonUtils
 {
@@ -94,14 +97,14 @@ public class JsonUtils
     }
 
     @Nullable
-    public static NBTTagCompound readNBT(JsonObject json, String key)
+    public static CompoundNBT readNBT(JsonObject json, String key)
     {
-        if (net.minecraft.util.JsonUtils.hasField(json, key))
+        if (net.minecraft.util.JSONUtils.hasField(json, key))
         {
             try
             {
-                return JsonToNBT.getTagFromJson(net.minecraft.util.JsonUtils.getString(json, key));
-            } catch (NBTException e)
+                return JsonToNBT.getTagFromJson(net.minecraft.util.JSONUtils.getString(json, key));
+            } catch (CommandSyntaxException e)
             {
                 throw new JsonSyntaxException("Malformed NBT tag", e);
             }

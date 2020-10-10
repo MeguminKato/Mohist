@@ -2,6 +2,8 @@ package org.bukkit.boss;
 
 import java.util.List;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface BossBar {
 
@@ -10,6 +12,7 @@ public interface BossBar {
      *
      * @return the title of the bar
      */
+    @NotNull
     String getTitle();
 
     /**
@@ -17,13 +20,14 @@ public interface BossBar {
      *
      * @param title the title of the bar
      */
-    void setTitle(String title);
+    void setTitle(@Nullable String title);
 
     /**
      * Returns the color of this boss bar
      *
      * @return the color of the bar
      */
+    @NotNull
     BarColor getColor();
 
     /**
@@ -31,13 +35,14 @@ public interface BossBar {
      *
      * @param color the color of the bar
      */
-    void setColor(BarColor color);
+    void setColor(@NotNull BarColor color);
 
     /**
      * Returns the style of this boss bar
      *
      * @return the style of the bar
      */
+    @NotNull
     BarStyle getStyle();
 
     /**
@@ -45,21 +50,21 @@ public interface BossBar {
      *
      * @param style the style of the bar
      */
-    void setStyle(BarStyle style);
+    void setStyle(@NotNull BarStyle style);
 
     /**
      * Remove an existing flag on this boss bar
      *
      * @param flag the existing flag to remove
      */
-    void removeFlag(BarFlag flag);
+    void removeFlag(@NotNull BarFlag flag);
 
     /**
      * Add an optional flag to this boss bar
      *
      * @param flag an optional flag to set on the boss bar
      */
-    void addFlag(BarFlag flag);
+    void addFlag(@NotNull BarFlag flag);
 
     /**
      * Returns whether this boss bar as the passed flag set
@@ -67,14 +72,7 @@ public interface BossBar {
      * @param flag the flag to check
      * @return whether it has the flag
      */
-    boolean hasFlag(BarFlag flag);
-
-    /**
-     * Returns the progress of the bar between 0.0 and 1.0
-     *
-     * @return the progress of the bar
-     */
-    double getProgress();
+    boolean hasFlag(@NotNull BarFlag flag);
 
     /**
      * Sets the progress of the bar. Values should be between 0.0 (empty) and
@@ -85,11 +83,18 @@ public interface BossBar {
     void setProgress(double progress);
 
     /**
+     * Returns the progress of the bar between 0.0 and 1.0
+     *
+     * @return the progress of the bar
+     */
+    double getProgress();
+
+    /**
      * Adds the player to this boss bar causing it to display on their screen.
      *
      * @param player the player to add
      */
-    void addPlayer(Player player);
+    void addPlayer(@NotNull Player player);
 
     /**
      * Removes the player from this boss bar causing it to be removed from their
@@ -97,7 +102,7 @@ public interface BossBar {
      *
      * @param player the player to remove
      */
-    void removePlayer(Player player);
+    void removePlayer(@NotNull Player player);
 
     /**
      * Removes all players from this boss bar
@@ -111,14 +116,8 @@ public interface BossBar {
      *
      * @return a immutable list of players
      */
+    @NotNull
     List<Player> getPlayers();
-
-    /**
-     * Return if the boss bar is displayed to attached players.
-     *
-     * @return visible status
-     */
-    boolean isVisible();
 
     /**
      * Set if the boss bar is displayed to attached players.
@@ -126,6 +125,13 @@ public interface BossBar {
      * @param visible visible status
      */
     void setVisible(boolean visible);
+
+    /**
+     * Return if the boss bar is displayed to attached players.
+     *
+     * @return visible status
+     */
+    boolean isVisible();
 
     /**
      * Shows the previously hidden boss bar to all attached players

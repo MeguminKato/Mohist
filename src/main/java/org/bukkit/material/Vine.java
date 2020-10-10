@@ -7,7 +7,11 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents a vine
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Vine extends MaterialData {
     private static final int VINE_NORTH = 0x4;
     private static final int VINE_EAST = 0x8;
@@ -16,16 +20,16 @@ public class Vine extends MaterialData {
     private static final EnumSet<BlockFace> possibleFaces = EnumSet.of(BlockFace.WEST, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST);
 
     public Vine() {
-        super(Material.VINE);
+        super(Material.LEGACY_VINE);
     }
 
     /**
-     * @param type the raw type id
+     * @param type the type
      * @param data the raw data value
      * @deprecated Magic value
      */
-
-    public Vine(int type, byte data) {
+    @Deprecated
+    public Vine(final Material type, final byte data) {
         super(type, data);
     }
 
@@ -33,9 +37,9 @@ public class Vine extends MaterialData {
      * @param data the raw data value
      * @deprecated Magic value
      */
-
+    @Deprecated
     public Vine(byte data) {
-        super(Material.VINE, data);
+        super(Material.LEGACY_VINE, data);
     }
 
     public Vine(BlockFace... faces) {

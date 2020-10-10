@@ -19,30 +19,31 @@
 
 package net.minecraftforge.common.util;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.world.WorldProvider;
+import javax.annotation.Nullable;
+
+import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.world.storage.WorldSavedData;
 
 public class WorldCapabilityData extends WorldSavedData
 {
     public static final String ID = "capabilities";
 
-    private INBTSerializable<NBTTagCompound> serializable;
-    private NBTTagCompound capNBT = null;
+    private INBTSerializable<CompoundNBT> serializable;
+    private CompoundNBT capNBT = null;
 
     public WorldCapabilityData(String name)
     {
         super(name);
     }
 
-    public WorldCapabilityData(INBTSerializable<NBTTagCompound> serializable)
+    public WorldCapabilityData(@Nullable INBTSerializable<CompoundNBT> serializable)
     {
         super(ID);
         this.serializable = serializable;
     }
 
     @Override
-    public void readFromNBT(NBTTagCompound nbt)
+    public void read(CompoundNBT nbt)
     {
         this.capNBT = nbt;
         if (serializable != null)
@@ -53,7 +54,7 @@ public class WorldCapabilityData extends WorldSavedData
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound nbt)
+    public CompoundNBT write(CompoundNBT nbt)
     {
         if (serializable != null)
             nbt = serializable.serializeNBT();
@@ -66,7 +67,7 @@ public class WorldCapabilityData extends WorldSavedData
         return true;
     }
 
-    public void setCapabilities(WorldProvider provider, INBTSerializable<NBTTagCompound> capabilities)
+    public void setCapabilities(INBTSerializable<CompoundNBT> capabilities)
     {
         this.serializable = capabilities;
         if (this.capNBT != null && serializable != null)

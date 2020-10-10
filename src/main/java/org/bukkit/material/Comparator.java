@@ -6,9 +6,13 @@ import org.bukkit.block.BlockFace;
 /**
  * Represents a comparator in the on or off state, in normal or subtraction mode and facing in a specific direction.
  *
- * @see Material#REDSTONE_COMPARATOR_OFF
- * @see Material#REDSTONE_COMPARATOR_ON
+ * @see Material#LEGACY_REDSTONE_COMPARATOR_OFF
+ * @see Material#LEGACY_REDSTONE_COMPARATOR_ON
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Comparator extends MaterialData implements Directional, Redstone {
     protected static final BlockFace DEFAULT_DIRECTION = BlockFace.NORTH;
     protected static final boolean DEFAULT_SUBTRACTION_MODE = false;
@@ -54,18 +58,9 @@ public class Comparator extends MaterialData implements Directional, Redstone {
      * @see BlockFace
      */
     public Comparator(BlockFace facingDirection, boolean isSubtraction, boolean state) {
-        super(state ? Material.REDSTONE_COMPARATOR_ON : Material.REDSTONE_COMPARATOR_OFF);
+        super(state ? Material.LEGACY_REDSTONE_COMPARATOR_ON : Material.LEGACY_REDSTONE_COMPARATOR_OFF);
         setFacingDirection(facingDirection);
         setSubtractionMode(isSubtraction);
-    }
-
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-
-    public Comparator(int type) {
-        super(type);
     }
 
     public Comparator(Material type) {
@@ -73,32 +68,13 @@ public class Comparator extends MaterialData implements Directional, Redstone {
     }
 
     /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-
-    public Comparator(int type, byte data) {
-        super(type, data);
-    }
-
-    /**
      * @param type the type
      * @param data the raw data value
      * @deprecated Magic value
      */
-
+    @Deprecated
     public Comparator(Material type, byte data) {
         super(type, data);
-    }
-
-    /**
-     * Checks whether the comparator is in subtraction mode
-     *
-     * @return True if the comparator is in subtraction mode, false if normal comparator operation
-     */
-    public boolean isSubtractionMode() {
-        return (getData() & 0x4) != 0;
     }
 
     /**
@@ -108,6 +84,15 @@ public class Comparator extends MaterialData implements Directional, Redstone {
      */
     public void setSubtractionMode(boolean isSubtraction) {
         setData((byte) (getData() & 0xB | (isSubtraction ? 0x4 : 0x0)));
+    }
+
+    /**
+     * Checks whether the comparator is in subtraction mode
+     *
+     * @return True if the comparator is in subtraction mode, false if normal comparator operation
+     */
+    public boolean isSubtractionMode() {
+        return (getData() & 0x4) != 0;
     }
 
     /**
@@ -122,21 +107,21 @@ public class Comparator extends MaterialData implements Directional, Redstone {
         int data = getData() & 0xC;
 
         switch (face) {
-            case EAST:
-                data |= 0x1;
-                break;
+        case EAST:
+            data |= 0x1;
+            break;
 
-            case SOUTH:
-                data |= 0x2;
-                break;
+        case SOUTH:
+            data |= 0x2;
+            break;
 
-            case WEST:
-                data |= 0x3;
-                break;
+        case WEST:
+            data |= 0x3;
+            break;
 
-            case NORTH:
-            default:
-                data |= 0x0;
+        case NORTH:
+        default:
+            data |= 0x0;
         }
 
         setData((byte) data);
@@ -154,18 +139,18 @@ public class Comparator extends MaterialData implements Directional, Redstone {
         byte data = (byte) (getData() & 0x3);
 
         switch (data) {
-            case 0x0:
-            default:
-                return BlockFace.NORTH;
+        case 0x0:
+        default:
+            return BlockFace.NORTH;
 
-            case 0x1:
-                return BlockFace.EAST;
+        case 0x1:
+            return BlockFace.EAST;
 
-            case 0x2:
-                return BlockFace.SOUTH;
+        case 0x2:
+            return BlockFace.SOUTH;
 
-            case 0x3:
-                return BlockFace.WEST;
+        case 0x3:
+            return BlockFace.WEST;
         }
     }
 
@@ -186,7 +171,7 @@ public class Comparator extends MaterialData implements Directional, Redstone {
      */
     @Override
     public boolean isPowered() {
-        return getItemType() == Material.REDSTONE_COMPARATOR_ON;
+        return getItemType() == Material.LEGACY_REDSTONE_COMPARATOR_ON;
     }
 
     /**

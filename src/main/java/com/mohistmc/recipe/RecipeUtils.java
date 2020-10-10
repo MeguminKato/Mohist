@@ -14,7 +14,7 @@ public class RecipeUtils {
         try {
             return recipe == null ? null : recipe.toBukkitRecipe();
         } catch (AbstractMethodError ex) {
-            return new CustomModRecipe(recipe, recipe.getRegistryName());
+            return new CustomModRecipe(recipe, recipe.getId());
         }
     }
 }

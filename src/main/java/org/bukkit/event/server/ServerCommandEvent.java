@@ -3,6 +3,7 @@ package org.bukkit.event.server;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is called when a command is run by a non-player. It is
@@ -40,17 +41,13 @@ import org.bukkit.event.HandlerList;
  */
 public class ServerCommandEvent extends ServerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-    private final CommandSender sender;
     private String command;
+    private final CommandSender sender;
     private boolean cancel = false;
 
-    public ServerCommandEvent(final CommandSender sender, final String command) {
+    public ServerCommandEvent(@NotNull final CommandSender sender, @NotNull final String command) {
         this.command = command;
         this.sender = sender;
-    }
-
-    public static HandlerList getHandlerList() {
-        return handlers;
     }
 
     /**
@@ -59,6 +56,7 @@ public class ServerCommandEvent extends ServerEvent implements Cancellable {
      *
      * @return Command the user is attempting to execute
      */
+    @NotNull
     public String getCommand() {
         return command;
     }
@@ -68,7 +66,7 @@ public class ServerCommandEvent extends ServerEvent implements Cancellable {
      *
      * @param message New message that the server will execute
      */
-    public void setCommand(String message) {
+    public void setCommand(@NotNull String message) {
         this.command = message;
     }
 
@@ -77,12 +75,19 @@ public class ServerCommandEvent extends ServerEvent implements Cancellable {
      *
      * @return The sender
      */
+    @NotNull
     public CommandSender getSender() {
         return sender;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    @NotNull
+    public static HandlerList getHandlerList() {
         return handlers;
     }
 

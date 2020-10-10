@@ -2,6 +2,7 @@ package org.bukkit;
 
 import com.google.common.collect.Maps;
 import java.util.Map;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents the different types of grass.
@@ -21,18 +22,22 @@ public enum GrassSpecies {
      */
     FERN_LIKE(0x2);
 
-    private final static Map<Byte, GrassSpecies> BY_DATA = Maps.newHashMap();
-
-    static {
-        for (GrassSpecies grassSpecies : values()) {
-            BY_DATA.put(grassSpecies.getData(), grassSpecies);
-        }
-    }
-
     private final byte data;
+    private static final Map<Byte, GrassSpecies> BY_DATA = Maps.newHashMap();
 
     private GrassSpecies(final int data) {
         this.data = (byte) data;
+    }
+
+    /**
+     * Gets the associated data value representing this species
+     *
+     * @return A byte containing the data value of this grass species
+     * @deprecated Magic value
+     */
+    @Deprecated
+    public byte getData() {
+        return data;
     }
 
     /**
@@ -43,19 +48,15 @@ public enum GrassSpecies {
      *     if it doesn't exist
      * @deprecated Magic value
      */
-
+    @Deprecated
+    @Nullable
     public static GrassSpecies getByData(final byte data) {
         return BY_DATA.get(data);
     }
 
-    /**
-     * Gets the associated data value representing this species
-     *
-     * @return A byte containing the data value of this grass species
-     * @deprecated Magic value
-     */
-
-    public byte getData() {
-        return data;
+    static {
+        for (GrassSpecies grassSpecies : values()) {
+            BY_DATA.put(grassSpecies.getData(), grassSpecies);
+        }
     }
 }

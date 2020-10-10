@@ -21,63 +21,91 @@ package net.minecraftforge.registries;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Random;
 import java.util.Set;
+
 import javax.annotation.Nullable;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.registry.RegistryNamespacedDefaultedByKey;
-import net.minecraftforge.fml.common.FMLLog;
+
 import org.apache.commons.lang3.Validate;
 
-class NamespacedDefaultedWrapper<V extends IForgeRegistryEntry<V>> extends RegistryNamespacedDefaultedByKey<ResourceLocation, V> implements ILockableRegistry
-{
-    private boolean locked = false;
-    private ForgeRegistry<V> delegate;
+import net.minecraft.util.RegistryKey;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.registry.DefaultedRegistry;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-    private NamespacedDefaultedWrapper(ForgeRegistry<V> owner)
+import com.mojang.serialization.Lifecycle;
+
+class NamespacedDefaultedWrapper<T extends IForgeRegistryEntry<T>> extends DefaultedRegistry<T> implements ILockableRegistry
+{
+    private static final Logger LOGGER = LogManager.getLogger();
+    private boolean locked = false;
+    private ForgeRegistry<T> delegate;
+
+    private NamespacedDefaultedWrapper(ForgeRegistry<T> owner)
     {
-        super(null);
+        super("empty", owner.getRegistryKey(), Lifecycle.experimental());
         this.delegate = owner;
     }
 
     @Override
-    public void register(int id, ResourceLocation key, V value)
+    public <V extends T> V register(int id, RegistryKey<T> key, V value, Lifecycle lifecycle)
     {
         if (locked)
             throw new IllegalStateException("Can not register to a locked registry. Modder should use Forge Register methods.");
         Validate.notNull(value);
 
         if (value.getRegistryName() == null)
-            value.setRegistryName(key);
+            value.setRegistryName(key.func_240901_a_());
 
         int realId = this.delegate.add(id, value);
         if (realId != id && id != -1)
-            FMLLog.log.warn("Registered object did not get ID it asked for. Name: {} Type: {} Expected: {} Got: {}", key, value.getRegistryType().getName(), id, realId);
+            LOGGER.warn("Registered object did not get ID it asked for. Name: {} Type: {} Expected: {} Got: {}", key, value.getRegistryType().getName(), id, realId);
+
+        return value;
     }
 
     @Override
-    public void putObject(ResourceLocation key, V value)
+    public <V extends T> V register(RegistryKey<T> key, V value, Lifecycle lifecycle)
     {
-        register(-1, key, value);
+        return register(-1, key, value, lifecycle);
     }
 
     @Override
-    public void validateKey()
-    {
-        this.delegate.validateKey();
+    public <V extends T> V func_241874_a(OptionalInt id, RegistryKey<T> key, V value, Lifecycle lifecycle) {
+        int wanted = -1;
+        if (id.isPresent() && getByValue(id.getAsInt()) != null)
+            wanted = id.getAsInt();
+        return register(wanted, key, value, lifecycle);
     }
 
     // Reading Functions
     @Override
-    @Nullable
-    public V getObject(@Nullable ResourceLocation name)
+    public Optional<T> func_241873_b(@Nullable ResourceLocation name)
     {
-        return this.delegate.getValue(name);
+        return Optional.ofNullable( this.delegate.getRaw(name)); //get without default
     }
 
     @Override
     @Nullable
-    public ResourceLocation getNameForObject(V value)
+    public T getOrDefault(@Nullable ResourceLocation name)
+    {
+        return this.delegate.getValue(name); //getOrDefault
+    }
+
+    @Override
+    @Nullable
+    public T func_230516_a_(@Nullable RegistryKey<T> name)
+    {
+        return name == null ? null : this.delegate.getRaw(name.func_240901_a_()); //get without default
+    }
+
+    @Override
+    @Nullable
+    public ResourceLocation getKey(T value)
     {
         return this.delegate.getKey(value);
     }
@@ -89,36 +117,48 @@ class NamespacedDefaultedWrapper<V extends IForgeRegistryEntry<V>> extends Regis
     }
 
     @Override
-    public int getIDForObject(@Nullable V value)
+    public int getId(@Nullable T value)
     {
         return this.delegate.getID(value);
     }
 
     @Override
     @Nullable
-    public V getObjectById(int id)
+    public T getByValue(int id)
     {
         return this.delegate.getValue(id);
     }
 
     @Override
-    public Iterator<V> iterator()
+    public Iterator<T> iterator()
     {
         return this.delegate.iterator();
     }
 
     @Override
-    public Set<ResourceLocation> getKeys()
+    public Set<ResourceLocation> keySet()
     {
         return this.delegate.getKeys();
     }
 
     @Override
-    @Nullable
-    public V getRandomObject(Random random)
+    public Set<Map.Entry<RegistryKey<T>, T>> func_239659_c_()
     {
-        Collection<V> values = this.delegate.getValuesCollection();
+        return this.delegate.getEntries();
+    }
+
+    @Override
+    @Nullable
+    public T getRandom(Random random)
+    {
+        Collection<T> values = this.delegate.getValues();
         return values.stream().skip(random.nextInt(values.size())).findFirst().orElse(this.delegate.getDefault());
+    }
+
+    @Override
+    public ResourceLocation getDefaultKey()
+    {
+        return this.delegate.getDefaultKey();
     }
 
     //internal

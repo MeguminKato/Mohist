@@ -20,24 +20,21 @@
 package net.minecraftforge.event.world;
 
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.List;
+
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.WorldClient;
-import net.minecraft.client.network.NetHandlerPlayClient;
-import net.minecraft.entity.EnumCreatureType;
+import net.minecraft.entity.EntityClassification;
 import net.minecraft.profiler.Profiler;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.util.IProgressUpdate;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.EnumDifficulty;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
+import net.minecraft.world.IWorld;
 import net.minecraft.world.WorldSettings;
-import net.minecraft.world.biome.Biome.SpawnListEntry;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
-import net.minecraftforge.fml.common.eventhandler.Event;
+import net.minecraft.world.biome.MobSpawnInfo;
+import net.minecraft.world.storage.IServerWorldInfo;
+import net.minecraftforge.eventbus.api.Cancelable;
+import net.minecraftforge.eventbus.api.Event;
 
 /**
  * WorldEvent is fired when an event involving the world occurs.<br>
@@ -50,14 +47,14 @@ import net.minecraftforge.fml.common.eventhandler.Event;
  **/
 public class WorldEvent extends Event
 {
-    private final World world;
+    private final IWorld world;
 
-    public WorldEvent(World world)
+    public WorldEvent(IWorld world)
     {
         this.world = world;
     }
 
-    public World getWorld()
+    public IWorld getWorld()
     {
         return world;
     }
@@ -79,7 +76,7 @@ public class WorldEvent extends Event
      **/
     public static class Load extends WorldEvent
     {
-        public Load(World world) { super(world); }
+        public Load(IWorld world) { super(world); }
     }
 
     /**
@@ -87,7 +84,7 @@ public class WorldEvent extends Event
      * This event is fired when a world is unloaded in
      * {@link Minecraft#loadWorld(WorldClient, String)},
      * {@link MinecraftServer#stopServer()},
-     * {@link DimensionManager#unloadWorlds(Hashtable)},
+     * {@link DimensionManager#unloadWorlds()},
      * {@link ForgeInternalHandler#onDimensionUnload(Unload)}. <br>
      * <br>
      * This event is not {@link Cancelable}.<br>
@@ -98,7 +95,7 @@ public class WorldEvent extends Event
      **/
     public static class Unload extends WorldEvent
     {
-        public Unload(World world) { super(world); }
+        public Unload(IWorld world) { super(world); }
     }
 
     /**
@@ -115,7 +112,7 @@ public class WorldEvent extends Event
      **/
     public static class Save extends WorldEvent
     {
-        public Save(World world) { super(world); }
+        public Save(IWorld world) { super(world); }
     }
 
     /**
@@ -126,29 +123,25 @@ public class WorldEvent extends Event
      * where the latter checks for identity, meaning both events must add the same instance.
      * Canceling the event will result in a empty list, meaning no entity will be spawned.
      */
-    @Cancelable
+    @net.minecraftforge.eventbus.api.Cancelable
     public static class PotentialSpawns extends WorldEvent
     {
-        private final EnumCreatureType type;
+        private final EntityClassification type;
         private final BlockPos pos;
-        private final List<SpawnListEntry> list;
+        private final List<MobSpawnInfo.Spawners> list;
 
-        public PotentialSpawns(World world, EnumCreatureType type, BlockPos pos, List<SpawnListEntry> oldList)
+        public PotentialSpawns(IWorld world, EntityClassification type, BlockPos pos, List<MobSpawnInfo.Spawners> oldList)
         {
             super(world);
             this.pos = pos;
             this.type = type;
             if (oldList != null)
-            {
-                this.list = new ArrayList<SpawnListEntry>(oldList);
-            }
+                this.list = new ArrayList<>(oldList);
             else
-            {
-                this.list = new ArrayList<SpawnListEntry>();
-            }
+                this.list = new ArrayList<>();
         }
 
-        public EnumCreatureType getType()
+        public EntityClassification getType()
         {
             return type;
         }
@@ -158,7 +151,7 @@ public class WorldEvent extends Event
             return pos;
         }
 
-        public List<SpawnListEntry> getList()
+        public List<MobSpawnInfo.Spawners> getList()
         {
             return list;
         }
@@ -168,17 +161,17 @@ public class WorldEvent extends Event
      * Called by WorldServer when it attempts to create a spawnpoint for a dimension.
      * Canceling the event will prevent the vanilla code from running.
      */
-    @Cancelable
+    @net.minecraftforge.eventbus.api.Cancelable
     public static class CreateSpawnPosition extends WorldEvent
     {
-        private final WorldSettings settings;
-        public CreateSpawnPosition(World world, WorldSettings settings)
+        private final IServerWorldInfo settings;
+        public CreateSpawnPosition(IWorld world, IServerWorldInfo settings)
         {
             super(world);
             this.settings = settings;
         }
 
-        public WorldSettings getSettings()
+        public IServerWorldInfo getSettings()
         {
             return settings;
         }

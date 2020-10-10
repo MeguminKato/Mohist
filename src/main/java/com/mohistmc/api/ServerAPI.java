@@ -38,6 +38,6 @@ public class ServerAPI {
     }
 
     public static MinecraftServer getNMSServer(){
-        return MinecraftServer.getServerInst();
+        return MinecraftServer.getServer();
     }
 }

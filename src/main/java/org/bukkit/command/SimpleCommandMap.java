@@ -1,42 +1,41 @@
 package org.bukkit.command;
 
-import co.aikar.timings.Timing;
-import com.mohistmc.command.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
 import org.bukkit.Server;
-import org.bukkit.command.defaults.*;
+import org.bukkit.command.defaults.BukkitCommand;
+import org.bukkit.command.defaults.HelpCommand;
+import org.bukkit.command.defaults.PluginsCommand;
+import org.bukkit.command.defaults.ReloadCommand;
+import org.bukkit.command.defaults.TimingsCommand;
+import org.bukkit.command.defaults.VersionCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
-import com.mohistmc.MohistMC;
-
-import java.util.*;
-import java.util.regex.Pattern;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class SimpleCommandMap implements CommandMap {
-    private static final Pattern PATTERN_ON_SPACE = Pattern.compile(" ", Pattern.LITERAL);
-    protected final Map<String, Command> knownCommands = new HashMap<>();
+    protected final Map<String, Command> knownCommands = new HashMap<String, Command>();
     private final Server server;
 
-    public SimpleCommandMap(final Server server) {
+    public SimpleCommandMap(@NotNull final Server server) {
         this.server = server;
         setDefaultCommands();
     }
 
     private void setDefaultCommands() {
         register("bukkit", new VersionCommand("version"));
-        register("bukkit", new PluginsCommand("plugins"));
-        register("bukkit", new co.aikar.timings.TimingsCommand("timings")); // Spigot
         register("bukkit", new ReloadCommand("reload"));
-        // Mohist
-        register("mohist", new MohistCommand("mohist"));
-        register("getpluginlist", new GetPluginListCommand("getpluginlist"));
-        register("getmodlist", new GetModListCommand("getmodlist"));
-        register("whitelistmods", new WhitelistModsCommand("whitelistmods"));
-        register("downloadfile", new DownloadFileCommand("downloadfile"));
-        register("dump", new DumpCommand("dump"));
-        register("entity", new EntityCommand("entity"));
-        register("tileentity", new TileEntityCommand("tileentity"));
+        register("bukkit", new PluginsCommand("plugins"));
+        register("bukkit", new TimingsCommand("timings"));
     }
 
     public void setFallbackCommands() {
@@ -46,7 +45,8 @@ public class SimpleCommandMap implements CommandMap {
     /**
      * {@inheritDoc}
      */
-    public void registerAll(String fallbackPrefix, List<Command> commands) {
+    @Override
+    public void registerAll(@NotNull String fallbackPrefix, @NotNull List<Command> commands) {
         if (commands != null) {
             for (Command c : commands) {
                 register(fallbackPrefix, c);
@@ -57,15 +57,16 @@ public class SimpleCommandMap implements CommandMap {
     /**
      * {@inheritDoc}
      */
-    public boolean register(String fallbackPrefix, Command command) {
+    @Override
+    public boolean register(@NotNull String fallbackPrefix, @NotNull Command command) {
         return register(command.getName(), fallbackPrefix, command);
     }
 
     /**
      * {@inheritDoc}
      */
-    public boolean register(String label, String fallbackPrefix, Command command) {
-        command.timings = co.aikar.timings.TimingsManager.getCommandTiming(fallbackPrefix, command); // Spigot
+    @Override
+    public boolean register(@NotNull String label, @NotNull String fallbackPrefix, @NotNull Command command) {
         label = label.toLowerCase(java.util.Locale.ENGLISH).trim();
         fallbackPrefix = fallbackPrefix.toLowerCase(java.util.Locale.ENGLISH).trim();
         boolean registered = register(label, command, false, fallbackPrefix);
@@ -99,7 +100,7 @@ public class SimpleCommandMap implements CommandMap {
      *     unique address
      * @return true if command was registered, false otherwise.
      */
-    private synchronized boolean register(String label, Command command, boolean isAlias, String fallbackPrefix) {
+    private synchronized boolean register(@NotNull String label, @NotNull Command command, boolean isAlias, @NotNull String fallbackPrefix) {
         knownCommands.put(fallbackPrefix + ":" + label, command);
         if ((command instanceof BukkitCommand || isAlias) && knownCommands.containsKey(label)) {
             // Request is for an alias/fallback command and it conflicts with
@@ -127,8 +128,9 @@ public class SimpleCommandMap implements CommandMap {
     /**
      * {@inheritDoc}
      */
-    public boolean dispatch(CommandSender sender, String commandLine) throws CommandException {
-        String[] args = PATTERN_ON_SPACE.split(commandLine);
+    @Override
+    public boolean dispatch(@NotNull CommandSender sender, @NotNull String commandLine) throws CommandException {
+        String[] args = commandLine.split(" ");
 
         if (args.length == 0) {
             return false;
@@ -141,13 +143,7 @@ public class SimpleCommandMap implements CommandMap {
             return false;
         }
 
-        // Paper start - Plugins do weird things to workaround normal registration
-        if (target.timings == null) {
-            target.timings = co.aikar.timings.TimingsManager.getCommandTiming(null, target);
-        }
-        // Paper end
-
-        try (Timing ignored = target.timings.startTiming()) { // Paper - use try with resources
+        try {
             // Note: we don't return the result of target.execute as thats success / failure, we return handled (true) or not handled (false)
             target.execute(sender, sentCommandLabel, Arrays.copyOfRange(args, 1, args.length));
         } catch (CommandException ex) {
@@ -160,6 +156,7 @@ public class SimpleCommandMap implements CommandMap {
         return true;
     }
 
+    @Override
     public synchronized void clearCommands() {
         for (Map.Entry<String, Command> entry : knownCommands.entrySet()) {
             entry.getValue().unregister(this);
@@ -168,23 +165,29 @@ public class SimpleCommandMap implements CommandMap {
         setDefaultCommands();
     }
 
-    public Command getCommand(String name) {
+    @Override
+    @Nullable
+    public Command getCommand(@NotNull String name) {
         Command target = knownCommands.get(name.toLowerCase(java.util.Locale.ENGLISH));
         return target;
     }
 
-    public List<String> tabComplete(CommandSender sender, String cmdLine) {
+    @Override
+    @Nullable
+    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String cmdLine) {
         return tabComplete(sender, cmdLine, null);
     }
 
-    public List<String> tabComplete(CommandSender sender, String cmdLine, Location location) {
+    @Override
+    @Nullable
+    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String cmdLine, @Nullable Location location) {
         Validate.notNull(sender, "Sender cannot be null");
         Validate.notNull(cmdLine, "Command line cannot null");
 
         int spaceIndex = cmdLine.indexOf(' ');
 
         if (spaceIndex == -1) {
-            ArrayList<String> completions = new ArrayList<>();
+            ArrayList<String> completions = new ArrayList<String>();
             Map<String, Command> knownCommands = this.knownCommands;
 
             final String prefix = (sender instanceof Player ? "/" : "");
@@ -218,8 +221,7 @@ public class SimpleCommandMap implements CommandMap {
             return null;
         }
 
-        String argLine = cmdLine.substring(spaceIndex + 1, cmdLine.length());
-        String[] args = PATTERN_ON_SPACE.split(argLine, -1);
+        String[] args = cmdLine.substring(spaceIndex + 1, cmdLine.length()).split(" ", -1);
 
         try {
             return target.tabComplete(sender, commandName, args, location);
@@ -230,6 +232,7 @@ public class SimpleCommandMap implements CommandMap {
         }
     }
 
+    @NotNull
     public Collection<Command> getCommands() {
         return Collections.unmodifiableCollection(knownCommands.values());
     }
@@ -240,12 +243,12 @@ public class SimpleCommandMap implements CommandMap {
         for (Map.Entry<String, String[]> entry : values.entrySet()) {
             String alias = entry.getKey();
             if (alias.contains(" ")) {
-                MohistMC.LOGGER.warn("Could not register alias " + alias + " because it contains illegal characters");
+                server.getLogger().warning("Could not register alias " + alias + " because it contains illegal characters");
                 continue;
             }
 
             String[] commandStrings = entry.getValue();
-            List<String> targets = new ArrayList<>();
+            List<String> targets = new ArrayList<String>();
             StringBuilder bad = new StringBuilder();
 
             for (String commandString : commandStrings) {
@@ -263,7 +266,7 @@ public class SimpleCommandMap implements CommandMap {
             }
 
             if (bad.length() > 0) {
-                MohistMC.LOGGER.warn("Could not register alias " + alias + " because it contains commands that do not exist: " + bad);
+                server.getLogger().warning("Could not register alias " + alias + " because it contains commands that do not exist: " + bad);
                 continue;
             }
 

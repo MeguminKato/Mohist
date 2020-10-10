@@ -5,29 +5,15 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents a furnace or a dispenser.
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class DirectionalContainer extends MaterialData implements Directional {
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-
-    public DirectionalContainer(final int type) {
-        super(type);
-    }
 
     public DirectionalContainer(final Material type) {
         super(type);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-
-    public DirectionalContainer(final int type, final byte data) {
-        super(type, data);
     }
 
     /**
@@ -35,51 +21,53 @@ public class DirectionalContainer extends MaterialData implements Directional {
      * @param data the raw data value
      * @deprecated Magic value
      */
-
+    @Deprecated
     public DirectionalContainer(final Material type, final byte data) {
         super(type, data);
     }
 
+    @Override
     public void setFacingDirection(BlockFace face) {
         byte data;
 
         switch (face) {
-            case NORTH:
-                data = 0x2;
-                break;
+        case NORTH:
+            data = 0x2;
+            break;
 
-            case SOUTH:
-                data = 0x3;
-                break;
+        case SOUTH:
+            data = 0x3;
+            break;
 
-            case WEST:
-                data = 0x4;
-                break;
+        case WEST:
+            data = 0x4;
+            break;
 
-            case EAST:
-            default:
-                data = 0x5;
+        case EAST:
+        default:
+            data = 0x5;
         }
 
         setData(data);
     }
 
+    @Override
     public BlockFace getFacing() {
         byte data = getData();
 
         switch (data) {
-            case 0x2:
-                return BlockFace.NORTH;
+        case 0x2:
+            return BlockFace.NORTH;
 
-            case 0x3:
-                return BlockFace.SOUTH;
+        case 0x3:
+            return BlockFace.SOUTH;
 
-            case 0x4:
-                return BlockFace.WEST;
+        case 0x4:
+            return BlockFace.WEST;
 
-            case 0x5:
-            default:
-                return BlockFace.EAST;
+        case 0x5:
+        default:
+            return BlockFace.EAST;
         }
     }
 

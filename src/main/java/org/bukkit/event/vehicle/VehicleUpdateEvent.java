@@ -2,6 +2,7 @@ package org.bukkit.event.vehicle;
 
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a vehicle updates
@@ -9,16 +10,18 @@ import org.bukkit.event.HandlerList;
 public class VehicleUpdateEvent extends VehicleEvent {
     private static final HandlerList handlers = new HandlerList();
 
-    public VehicleUpdateEvent(final Vehicle vehicle) {
+    public VehicleUpdateEvent(@NotNull final Vehicle vehicle) {
         super(vehicle);
     }
 
-    public static HandlerList getHandlerList() {
+    @NotNull
+    @Override
+    public HandlerList getHandlers() {
         return handlers;
     }
 
-    @Override
-    public HandlerList getHandlers() {
+    @NotNull
+    public static HandlerList getHandlerList() {
         return handlers;
     }
 }

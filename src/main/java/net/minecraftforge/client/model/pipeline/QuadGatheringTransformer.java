@@ -38,8 +38,8 @@ public abstract class QuadGatheringTransformer implements IVertexConsumer
     public void setVertexFormat(VertexFormat format)
     {
         this.format = format;
-        dataLength = new byte[format.getElementCount()];
-        quadData = new float[format.getElementCount()][4][4];
+        dataLength = new byte[format.getElements().size()];
+        quadData = new float[format.getElements().size()][4][4];
     }
 
     @Override
@@ -56,7 +56,7 @@ public abstract class QuadGatheringTransformer implements IVertexConsumer
         {
             dataLength[element] = (byte)data.length;
         }
-        if (element == getVertexFormat().getElementCount() - 1)
+        if (element == getVertexFormat().getElements().size() - 1)
         {
             vertices++;
         }

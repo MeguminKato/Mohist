@@ -20,22 +20,25 @@
 package net.minecraftforge.event.entity.player;
 
 import com.google.common.base.Preconditions;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
+import net.minecraft.util.ActionResultType;
+import net.minecraft.util.Direction;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
-import static net.minecraftforge.fml.common.eventhandler.Event.Result.DEFAULT;
-import static net.minecraftforge.fml.common.eventhandler.Event.Result.DENY;
-import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.eventbus.api.Cancelable;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import static net.minecraftforge.eventbus.api.Event.Result.DEFAULT;
+import static net.minecraftforge.eventbus.api.Event.Result.DENY;
+
+import net.minecraftforge.fml.LogicalSide;
 
 /**
  * PlayerInteractEvent is fired when a player interacts in some way.
@@ -44,13 +47,13 @@ import net.minecraftforge.fml.relauncher.Side;
  **/
 public class PlayerInteractEvent extends PlayerEvent
 {
-    private final EnumHand hand;
+    private final Hand hand;
     private final BlockPos pos;
     @Nullable
-    private final EnumFacing face;
-    private EnumActionResult cancellationResult = EnumActionResult.PASS;
+    private final Direction face;
+    private ActionResultType cancellationResult = ActionResultType.PASS;
 
-    private PlayerInteractEvent(EntityPlayer player, EnumHand hand, BlockPos pos, @Nullable EnumFacing face)
+    private PlayerInteractEvent(PlayerEntity player, Hand hand, BlockPos pos, @Nullable Direction face)
     {
         super(Preconditions.checkNotNull(player, "Null player in PlayerInteractEvent!"));
         this.hand = Preconditions.checkNotNull(hand, "Null hand in PlayerInteractEvent!");
@@ -70,12 +73,12 @@ public class PlayerInteractEvent extends PlayerEvent
     @Cancelable
     public static class EntityInteractSpecific extends PlayerInteractEvent
     {
-        private final Vec3d localPos;
+        private final Vector3d localPos;
         private final Entity target;
 
-        public EntityInteractSpecific(EntityPlayer player, EnumHand hand, Entity target, Vec3d localPos)
+        public EntityInteractSpecific(PlayerEntity player, Hand hand, Entity target, Vector3d localPos)
         {
-            super(player, hand, new BlockPos(target), null);
+            super(player, hand, target.func_233580_cy_(), null);
             this.localPos = localPos;
             this.target = target;
         }
@@ -86,7 +89,7 @@ public class PlayerInteractEvent extends PlayerEvent
          * [-width / 2, width / 2] while Y values will be in the range [0, height]
          * @return The local position
          */
-        public Vec3d getLocalPos()
+        public Vector3d getLocalPos()
         {
             return localPos;
         }
@@ -113,9 +116,9 @@ public class PlayerInteractEvent extends PlayerEvent
     {
         private final Entity target;
 
-        public EntityInteract(EntityPlayer player, EnumHand hand, Entity target)
+        public EntityInteract(PlayerEntity player, Hand hand, Entity target)
         {
-            super(player, hand, new BlockPos(target), null);
+            super(player, hand, target.func_233580_cy_(), null);
             this.target = target;
         }
 
@@ -142,19 +145,9 @@ public class PlayerInteractEvent extends PlayerEvent
     {
         private Result useBlock = DEFAULT;
         private Result useItem = DEFAULT;
-        private final Vec3d hitVec;
 
-        public RightClickBlock(EntityPlayer player, EnumHand hand, BlockPos pos, EnumFacing face, Vec3d hitVec) {
+        public RightClickBlock(PlayerEntity player, Hand hand, BlockPos pos, Direction face) {
             super(player, hand, pos, face);
-            this.hitVec = hitVec;
-        }
-
-        /**
-         * @return The hit vector of this click
-         */
-        public Vec3d getHitVec()
-        {
-            return hitVec;
         }
 
         /**
@@ -215,9 +208,9 @@ public class PlayerInteractEvent extends PlayerEvent
     @Cancelable
     public static class RightClickItem extends PlayerInteractEvent
     {
-        public RightClickItem(EntityPlayer player, EnumHand hand)
+        public RightClickItem(PlayerEntity player, Hand hand)
         {
-            super(player, hand, new BlockPos(player), null);
+            super(player, hand, player.func_233580_cy_(), null);
         }
     }
 
@@ -228,9 +221,9 @@ public class PlayerInteractEvent extends PlayerEvent
      */
     public static class RightClickEmpty extends PlayerInteractEvent
     {
-        public RightClickEmpty(EntityPlayer player, EnumHand hand)
+        public RightClickEmpty(PlayerEntity player, Hand hand)
         {
-            super(player, hand, new BlockPos(player), null);
+            super(player, hand, player.func_233580_cy_(), null);
         }
     }
 
@@ -251,20 +244,10 @@ public class PlayerInteractEvent extends PlayerEvent
     {
         private Result useBlock = DEFAULT;
         private Result useItem = DEFAULT;
-        private final Vec3d hitVec;
 
-        public LeftClickBlock(EntityPlayer player, BlockPos pos, EnumFacing face, Vec3d hitVec)
+        public LeftClickBlock(PlayerEntity player, BlockPos pos, Direction face)
         {
-            super(player, EnumHand.MAIN_HAND, pos, face);
-            this.hitVec = hitVec;
-        }
-
-        /**
-         * @return The local hit vector of this click
-         */
-        public Vec3d getHitVec()
-        {
-            return hitVec;
+            super(player, Hand.MAIN_HAND, pos, face);
         }
 
         /**
@@ -312,9 +295,9 @@ public class PlayerInteractEvent extends PlayerEvent
      */
     public static class LeftClickEmpty extends PlayerInteractEvent
     {
-        public LeftClickEmpty(EntityPlayer player)
+        public LeftClickEmpty(PlayerEntity player)
         {
-            super(player, EnumHand.MAIN_HAND, new BlockPos(player), null);
+            super(player, Hand.MAIN_HAND, player.func_233580_cy_(), null);
         }
     }
 
@@ -322,7 +305,7 @@ public class PlayerInteractEvent extends PlayerEvent
      * @return The hand involved in this interaction. Will never be null.
      */
     @Nonnull
-    public EnumHand getHand()
+    public Hand getHand()
     {
         return hand;
     }
@@ -333,7 +316,7 @@ public class PlayerInteractEvent extends PlayerEvent
     @Nonnull
     public ItemStack getItemStack()
     {
-        return getEntityPlayer().getHeldItem(hand);
+        return getPlayer().getHeldItem(hand);
     }
 
     /**
@@ -353,7 +336,7 @@ public class PlayerInteractEvent extends PlayerEvent
      * @return The face involved in this interaction. For all non-block interactions, this will return null.
      */
     @Nullable
-    public EnumFacing getFace()
+    public Direction getFace()
     {
         return face;
     }
@@ -363,15 +346,15 @@ public class PlayerInteractEvent extends PlayerEvent
      */
     public World getWorld()
     {
-        return getEntityPlayer().getEntityWorld();
+        return getPlayer().getEntityWorld();
     }
 
     /**
-     * @return The effective, i.e. logical, side of this interaction. This will be {@link Side#CLIENT} on the client thread, and {@link Side#SERVER} on the server thread.
+     * @return The effective, i.e. logical, side of this interaction. This will be {@link LogicalSide#CLIENT} on the client thread, and {@link LogicalSide#SERVER} on the server thread.
      */
-    public Side getSide()
+    public LogicalSide getSide()
     {
-        return getWorld().isRemote ? Side.CLIENT : Side.SERVER;
+        return getWorld().isRemote ? LogicalSide.CLIENT : LogicalSide.SERVER;
     }
 
     /**
@@ -379,7 +362,7 @@ public class PlayerInteractEvent extends PlayerEvent
      * method of the event. By default, this is {@link EnumActionResult#PASS}, meaning cancelled events will cause
      * the client to keep trying more interactions until something works.
      */
-    public EnumActionResult getCancellationResult()
+    public ActionResultType getCancellationResult()
     {
         return cancellationResult;
     }
@@ -389,7 +372,7 @@ public class PlayerInteractEvent extends PlayerEvent
      * method of the event.
      * Note that this only has an effect on {@link RightClickBlock}, {@link RightClickItem}, {@link EntityInteract}, and {@link EntityInteractSpecific}.
      */
-    public void setCancellationResult(EnumActionResult result)
+    public void setCancellationResult(ActionResultType result)
     {
         this.cancellationResult = result;
     }

@@ -2,6 +2,8 @@ package org.bukkit;
 
 import java.util.Date;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A ban list, containing bans of some {@link Type}.
@@ -9,12 +11,28 @@ import java.util.Set;
 public interface BanList {
 
     /**
+     * Represents a ban-type that a {@link BanList} may track.
+     */
+    public enum Type {
+        /**
+         * Banned player names
+         */
+        NAME,
+        /**
+         * Banned player IP addresses
+         */
+        IP,
+        ;
+    }
+
+    /**
      * Gets a {@link BanEntry} by target.
      *
      * @param target entry parameter to search for
      * @return the corresponding entry, or null if none found
      */
-    public BanEntry getBanEntry(String target);
+    @Nullable
+    public BanEntry getBanEntry(@NotNull String target);
 
     /**
      * Adds a ban to the this list. If a previous ban exists, this will
@@ -28,13 +46,15 @@ public interface BanList {
      * @return the entry for the newly created ban, or the entry for the
      *     (updated) previous ban
      */
-    public BanEntry addBan(String target, String reason, Date expires, String source);
+    @Nullable
+    public BanEntry addBan(@NotNull String target, @Nullable String reason, @Nullable Date expires, @Nullable String source);
 
     /**
      * Gets a set containing every {@link BanEntry} in this list.
      *
      * @return an immutable set containing every entry tracked by this list
      */
+    @NotNull
     public Set<BanEntry> getBanEntries();
 
     /**
@@ -45,7 +65,7 @@ public interface BanList {
      * @return true if a {@link BanEntry} exists for the name, indicating an
      *     active ban status, false otherwise
      */
-    public boolean isBanned(String target);
+    public boolean isBanned(@NotNull String target);
 
     /**
      * Removes the specified target from this list, therefore indicating a
@@ -53,19 +73,5 @@ public interface BanList {
      *
      * @param target the target to remove from this list
      */
-    public void pardon(String target);
-
-    /**
-     * Represents a ban-type that a {@link BanList} may track.
-     */
-    public enum Type {
-        /**
-         * Banned player names
-         */
-        NAME,
-        /**
-         * Banned player IP addresses
-         */
-        IP,;
-    }
+    public void pardon(@NotNull String target);
 }

@@ -19,16 +19,15 @@
 
 package net.minecraftforge.server.command;
 
-import io.netty.channel.Channel;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.network.NetHandlerPlayServer;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.util.text.TextComponentBase;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextComponentTranslation;
-import net.minecraft.util.text.translation.I18n;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
+import net.minecraft.command.ICommandSource;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.network.play.ServerPlayNetHandler;
+import net.minecraft.util.text.LanguageMap;
+import net.minecraft.util.text.TextComponent;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.fml.network.ConnectionType;
+import net.minecraftforge.fml.network.NetworkHooks;
 
 public class TextComponentHelper
 {
@@ -38,27 +37,22 @@ public class TextComponentHelper
      * Detects when sending to a vanilla client and falls back to sending english,
      * since they don't have the lang data necessary to translate on the client.
      */
-    public static TextComponentBase createComponentTranslation(ICommandSender sender, final String translation, final Object... args)
+    public static TextComponent createComponentTranslation(ICommandSource source, final String translation, final Object... args)
     {
-        if (isVanillaClient(sender))
+        if (isVanillaClient(source))
         {
-            return new TextComponentString(I18n.translateToLocalFormatted(translation, args));
+            return new StringTextComponent(String.format(LanguageMap.getInstance().func_230503_a_(translation), args));
         }
-        return new TextComponentTranslation(translation, args);
+        return new TranslationTextComponent(translation, args);
     }
 
-    private static boolean isVanillaClient(ICommandSender sender)
+    private static boolean isVanillaClient(ICommandSource sender)
     {
-        if (sender instanceof EntityPlayerMP)
+        if (sender instanceof ServerPlayerEntity)
         {
-            EntityPlayerMP playerMP = (EntityPlayerMP) sender;
-            NetHandlerPlayServer connection = playerMP.connection;
-            if (connection != null)
-            {
-                NetworkManager netManager = connection.netManager;
-                Channel channel = netManager.channel();
-                return !channel.attr(NetworkRegistry.FML_MARKER).get();
-            }
+            ServerPlayerEntity playerMP = (ServerPlayerEntity) sender;
+            ServerPlayNetHandler channel = playerMP.connection;
+            return NetworkHooks.getConnectionType(()->channel.netManager) == ConnectionType.VANILLA;
         }
         return false;
     }

@@ -20,7 +20,9 @@ public class BukkitObjectInputStream extends ObjectInputStream {
     /**
      * Constructor provided to mirror super functionality.
      *
-     * @throws IOException if an I/O error occurs while reading stream heade
+     * @throws IOException if an I/O error occurs while creating this stream
+     * @throws SecurityException if a security manager exists and denies
+     * enabling subclassing
      * @see ObjectInputStream#ObjectInputStream()
      */
     protected BukkitObjectInputStream() throws IOException, SecurityException {
@@ -40,12 +42,6 @@ public class BukkitObjectInputStream extends ObjectInputStream {
         super.enableResolveObject(true);
     }
 
-    private static IOException newIOException(String string, Throwable cause) {
-        IOException exception = new IOException(string);
-        exception.initCause(cause);
-        return exception;
-    }
-
     @Override
     protected Object resolveObject(Object obj) throws IOException {
         if (obj instanceof Wrapper) {
@@ -57,5 +53,11 @@ public class BukkitObjectInputStream extends ObjectInputStream {
         }
 
         return super.resolveObject(obj);
+    }
+
+    private static IOException newIOException(String string, Throwable cause) {
+        IOException exception = new IOException(string);
+        exception.initCause(cause);
+        return exception;
     }
 }

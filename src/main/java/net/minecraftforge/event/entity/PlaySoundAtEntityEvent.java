@@ -19,19 +19,19 @@
 
 package net.minecraftforge.event.entity;
 
-import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.SoundEvent;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
+import net.minecraftforge.eventbus.api.Cancelable;
+import net.minecraft.entity.Entity;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.SoundEvent;
 
 /**
  * PlaySoundAtEntityEvent is fired a sound is to be played at an Entity<br>
  * This event is fired whenever a sound is set to be played at an Entity such as in
- * {@link EntityPlayerSP#playSound(SoundEvent, float, float)} and {@link World#playSound(EntityPlayer, double, double, double, SoundEvent, SoundCategory, float, float)}.<br>
+ * {@link ClientPlayerEntity#playSound(SoundEvent, float, float)} and {@link World#playSound(PlayerEntity, double, double, double, SoundEvent, SoundCategory, float, float)}.<br>
  * <br>
  * {@link #name} contains the name of the sound to be played at the Entity.<br>
  * {@link #volume} contains the volume at which the sound is to be played originally.<br>
@@ -47,7 +47,7 @@ import net.minecraftforge.fml.common.eventhandler.Cancelable;
  * <br>
  * This event is fired on the {@link MinecraftForge#EVENT_BUS}.<br>
  **/
-@Cancelable
+@net.minecraftforge.eventbus.api.Cancelable
 public class PlaySoundAtEntityEvent extends EntityEvent
 {
     private SoundEvent name;

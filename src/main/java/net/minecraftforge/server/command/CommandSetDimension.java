@@ -19,101 +19,71 @@
 
 package net.minecraftforge.server.command;
 
-import java.util.Collections;
-import java.util.List;
-import javax.annotation.Nullable;
-import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.command.WrongUsageException;
+import net.minecraft.command.CommandSource;
+import net.minecraft.command.Commands;
+import net.minecraft.command.arguments.BlockPosArgument;
+import net.minecraft.command.arguments.DimensionArgument;
+import net.minecraft.command.arguments.EntityArgument;
 import net.minecraft.entity.Entity;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraftforge.common.DimensionManager;
+import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.common.util.ITeleporter;
 
-public class CommandSetDimension extends CommandBase
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+
+import java.util.Collection;
+import java.util.function.Function;
+
+public class CommandSetDimension
 {
-    @Override
-    public String getName()
+    private static final SimpleCommandExceptionType NO_ENTITIES = new SimpleCommandExceptionType(new TranslationTextComponent("commands.forge.setdim.invalid.entity"));
+    private static final DynamicCommandExceptionType INVALID_DIMENSION = new DynamicCommandExceptionType(dim -> new TranslationTextComponent("commands.forge.setdim.invalid.dim", dim));
+    static ArgumentBuilder<CommandSource, ?> register()
     {
-        return "setdimension";
+        return Commands.literal("setdimension")
+            .requires(cs->cs.hasPermissionLevel(2)) //permission
+            .then(Commands.argument("targets", EntityArgument.entities())
+                .then(Commands.argument("dim", DimensionArgument.getDimension())
+                    .then(Commands.argument("pos", BlockPosArgument.blockPos())
+                        .executes(ctx -> execute(ctx.getSource(), EntityArgument.getEntitiesAllowingNone(ctx, "targets"), DimensionArgument.getDimensionArgument(ctx, "dim"), BlockPosArgument.getBlockPos(ctx, "pos")))
+                    )
+                    .executes(ctx -> execute(ctx.getSource(), EntityArgument.getEntitiesAllowingNone(ctx, "targets"), DimensionArgument.getDimensionArgument(ctx, "dim"), new BlockPos(ctx.getSource().getPos())))
+                )
+            );
     }
 
-    @Override
-    public List<String> getAliases()
+    private static int execute(CommandSource sender, Collection<? extends Entity> entities, ServerWorld dim, BlockPos pos) throws CommandSyntaxException
     {
-        return Collections.singletonList("setdim");
+        entities.removeIf(e -> !canEntityTeleport(e));
+        if (entities.isEmpty())
+            throw NO_ENTITIES.create();
+
+        //if (!DimensionManager.isDimensionRegistered(dim))
+        //    throw INVALID_DIMENSION.create(dim);
+
+        entities.stream().filter(e -> e.world == dim).forEach(e -> sender.sendFeedback(new TranslationTextComponent("commands.forge.setdim.invalid.nochange", e.getDisplayName().getString(), dim), true));
+        entities.stream().filter(e -> e.world != dim).forEach(e ->  e.changeDimension(dim , new ITeleporter()
+        {
+            @Override
+            public Entity placeEntity(Entity entity, ServerWorld currentWorld, ServerWorld destWorld, float yaw, Function<Boolean, Entity> repositionEntity)
+            {
+                Entity repositionedEntity = repositionEntity.apply(false);
+                repositionedEntity.setPositionAndUpdate(pos.getX(), pos.getY(), pos.getZ());
+                return repositionedEntity;
+            }
+        }));
+
+
+        return 0;
     }
 
-    @Override
-    public String getUsage(ICommandSender sender)
+    private static boolean canEntityTeleport(Entity entity)
     {
-        return "commands.forge.setdim.usage";
-    }
-
-    @Override
-    public List<String> getTabCompletions(MinecraftServer server, ICommandSender sender, String[] args, @Nullable BlockPos targetPos)
-    {
-        if (args.length > 2 && args.length <= 5)
-        {
-            return getTabCompletionCoordinate(args, 2, targetPos);
-        }
-        return Collections.emptyList();
-    }
-
-    @Override
-    public int getRequiredPermissionLevel()
-    {
-        return 2;
-    }
-
-    @Override
-    public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException
-    {
-        // args: <entity> <dim> [<x> <y> <z>]
-        if (args.length != 2 && args.length != 5)
-        {
-            throw new WrongUsageException("commands.forge.setdim.usage");
-        }
-        Entity entity = getEntity(server, sender, args[0]);
-        if (!checkEntity(entity))
-        {
-            throw new CommandException("commands.forge.setdim.invalid.entity", entity.getName());
-        }
-        int dimension = parseInt(args[1]);
-        if (!DimensionManager.isDimensionRegistered(dimension))
-        {
-            throw new CommandException("commands.forge.setdim.invalid.dim", dimension);
-        }
-        if (dimension == entity.dimension)
-        {
-            throw new CommandException("commands.forge.setdim.invalid.nochange", entity.getName(), dimension);
-        }
-        BlockPos pos = args.length == 5 ? parseBlockPos(sender, args, 2, false) : sender.getPosition();
-        entity.changeDimension(dimension, new CommandTeleporter(pos));
-    }
-
-    private static boolean checkEntity(Entity entity)
-    {
-        // use vanilla portal logic, try to avoid doing anything too silly
-        return !entity.isRiding() && !entity.isBeingRidden() && entity.isNonBoss();
-    }
-
-    private static class CommandTeleporter implements ITeleporter
-    {
-        private final BlockPos targetPos;
-
-        private CommandTeleporter(BlockPos targetPos)
-        {
-            this.targetPos = targetPos;
-        }
-
-        @Override
-        public void placeEntity(World world, Entity entity, float yaw)
-        {
-            entity.moveToBlockPosAndAngles(targetPos, yaw, entity.rotationPitch);
-        }
+        // use vanilla portal logic from BlockPortal#onEntityCollision
+        return !entity.isPassenger() && !entity.isBeingRidden() && entity.isNonBoss();
     }
 }

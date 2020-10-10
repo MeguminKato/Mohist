@@ -19,119 +19,50 @@
 
 package net.minecraftforge.client.event;
 
-import javax.annotation.Nonnull;
-import net.minecraft.client.renderer.entity.RenderPlayer;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
+import com.mojang.blaze3d.matrix.MatrixStack;
+import net.minecraft.client.renderer.IRenderTypeBuffer;
+import net.minecraftforge.eventbus.api.Cancelable;
+import net.minecraft.client.renderer.entity.PlayerRenderer;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
 
 public abstract class RenderPlayerEvent extends PlayerEvent
 {
-    private final RenderPlayer renderer;
+    private final PlayerRenderer renderer;
     private final float partialRenderTick;
-    private final double x;
-    private final double y;
-    private final double z;
+    private final MatrixStack stack;
+    private final IRenderTypeBuffer buffers;
+    private final int light;
 
-    public RenderPlayerEvent(EntityPlayer player, RenderPlayer renderer, float partialRenderTick, double x, double y, double z)
+    public RenderPlayerEvent(PlayerEntity player, PlayerRenderer renderer, float partialRenderTick, MatrixStack stack, IRenderTypeBuffer buffers, int light)
     {
         super(player);
         this.renderer = renderer;
         this.partialRenderTick = partialRenderTick;
-        this.x = x;
-        this.y = y;
-        this.z = z;
+        this.stack = stack;
+        this.buffers = buffers;
+        this.light = light;
     }
 
-    public RenderPlayer getRenderer() { return renderer; }
+    public PlayerRenderer getRenderer() { return renderer; }
     public float getPartialRenderTick() { return partialRenderTick; }
-    public double getX() { return x; }
-    public double getY() { return y; }
-    public double getZ() { return z; }
+    public MatrixStack getMatrixStack() { return stack; }
+    public IRenderTypeBuffer getBuffers() { return buffers; }
+    public int getLight() { return light; }
 
     @Cancelable
     public static class Pre extends RenderPlayerEvent
     {
-        public Pre(EntityPlayer player, RenderPlayer renderer, float tick, double x, double y, double z){ super(player, renderer, tick, x, y, z); }
-        @Deprecated
-        public Pre(EntityPlayer player, RenderPlayer renderer, float tick){ this(player, renderer, tick, 0D, 0D, 0D); }
+        public Pre(PlayerEntity player, PlayerRenderer renderer, float tick, MatrixStack stack, IRenderTypeBuffer buffers, int light) {
+            super(player, renderer, tick, stack, buffers, light);
+        }
     }
 
     public static class Post extends RenderPlayerEvent
     {
-        public Post(EntityPlayer player, RenderPlayer renderer, float tick, double x, double y, double z){ super(player, renderer, tick, x, y, z); }
-        @Deprecated
-        public Post(EntityPlayer player, RenderPlayer renderer, float tick){ this(player, renderer, tick, 0D, 0D, 0D); }
-    }
-    
-    @Deprecated
-    public abstract static class Specials extends RenderPlayerEvent
-    {
-        public Specials(EntityPlayer player, RenderPlayer renderer, float partialTicks)
-        {
-            super(player, renderer, partialTicks, 0D, 0D, 0D);
-        }
-
-        @Cancelable
-        public static class Pre extends Specials
-        {
-            private boolean renderHelmet = true;
-            private boolean renderCape = true;
-            private boolean renderItem = true;
-            public Pre(EntityPlayer player, RenderPlayer renderer, float partialTicks){ super(player, renderer, partialTicks); }
-
-            public boolean shouldRenderHelmet() { return renderHelmet; }
-            public void setRenderHelmet(boolean renderHelmet) { this.renderHelmet = renderHelmet; }
-            public boolean shouldRenderCape() { return renderCape; }
-            public void setRenderCape(boolean renderCape) { this.renderCape = renderCape; }
-            public boolean shouldRenderItem() { return renderItem; }
-            public void setRenderItem(boolean renderItem) { this.renderItem = renderItem; }
-        }
-
-        public static class Post extends Specials
-        {
-            public Post(EntityPlayer player, RenderPlayer renderer, float partialTicks){ super(player, renderer, partialTicks); }
+        public Post(PlayerEntity player, PlayerRenderer renderer, float tick, MatrixStack stack, IRenderTypeBuffer buffers, int light) {
+            super(player, renderer, tick, stack, buffers, light);
         }
     }
 
-    @Deprecated
-    public static class SetArmorModel extends RenderPlayerEvent
-    {
-        private int result = -1;
-        private final int slot;
-        @Nonnull
-        private final ItemStack stack;
-        public SetArmorModel(EntityPlayer player, RenderPlayer renderer, int slot, float partialTick, @Nonnull ItemStack stack)
-        {
-            super(player, renderer, partialTick, 0D, 0D, 0D);
-            this.slot = slot;
-            this.stack = stack;
-        }
-
-        /**
-         * Setting this to any value besides -1 will result in the function being
-         * Immediately exited with the return value specified.
-         */
-        public int getResultValue()
-        {
-            return result;
-        }
-
-        public void setResult(int result)
-        {
-            this.result = result;
-        }
-
-        public int getSlot()
-        {
-            return slot;
-        }
-
-        @Nonnull
-        public ItemStack getStack()
-        {
-            return stack;
-        }
-    }
 }

@@ -2,27 +2,20 @@ package org.bukkit.command;
 
 import java.util.ArrayList;
 import org.bukkit.Bukkit;
+import org.jetbrains.annotations.NotNull;
 
 public class FormattedCommandAlias extends Command {
     private final String[] formatStrings;
 
-    public FormattedCommandAlias(String alias, String[] formatStrings) {
+    public FormattedCommandAlias(@NotNull String alias, @NotNull String[] formatStrings) {
         super(alias);
-        timings = co.aikar.timings.TimingsManager.getCommandTiming("minecraft", this); // Spigot
         this.formatStrings = formatStrings;
     }
 
-    @Override // Spigot
-    public String getTimingName() {return "Command Forwarder - " + super.getTimingName();} // Spigot
-
-    private static boolean inRange(int i, int j, int k) {
-        return i >= j && i <= k;
-    }
-
     @Override
-    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
+    public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         boolean result = false;
-        ArrayList<String> commands = new ArrayList<>();
+        ArrayList<String> commands = new ArrayList<String>();
         for (String formatString : formatStrings) {
             try {
                 commands.add(buildCommand(formatString, args));
@@ -43,7 +36,7 @@ public class FormattedCommandAlias extends Command {
         return result;
     }
 
-    private String buildCommand(String formatString, String[] args) {
+    private String buildCommand(@NotNull String formatString, @NotNull String[] args) {
         int index = formatString.indexOf('$');
         while (index != -1) {
             int start = index;
@@ -118,5 +111,9 @@ public class FormattedCommandAlias extends Command {
         }
 
         return formatString;
+    }
+
+    private static boolean inRange(int i, int j, int k) {
+        return i >= j && i <= k;
     }
 }

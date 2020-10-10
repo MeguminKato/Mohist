@@ -20,6 +20,7 @@
 package net.minecraftforge.registries;
 
 import com.google.common.base.Objects;
+
 import net.minecraft.util.ResourceLocation;
 
 /*

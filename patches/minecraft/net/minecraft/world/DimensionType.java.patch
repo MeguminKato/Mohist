@@ -1,40 +1,11 @@
---- ../src-base/minecraft/net/minecraft/world/DimensionType.java
-+++ ../src-work/minecraft/net/minecraft/world/DimensionType.java
-@@ -13,6 +13,7 @@
-     private final String field_186075_e;
-     private final String field_186076_f;
-     private final Class <? extends WorldProvider > field_186077_g;
-+    private boolean shouldLoadSpawn = false;
- 
-     private DimensionType(int p_i46672_3_, String p_i46672_4_, String p_i46672_5_, Class <? extends WorldProvider > p_i46672_6_)
-     {
-@@ -20,6 +21,7 @@
-         this.field_186075_e = p_i46672_4_;
-         this.field_186076_f = p_i46672_5_;
-         this.field_186077_g = p_i46672_6_;
-+        this.shouldLoadSpawn = p_i46672_3_ == 0;
-     }
- 
-     public int func_186068_a()
-@@ -75,6 +77,20 @@
-         throw new IllegalArgumentException("Invalid dimension id " + p_186069_0_);
-     }
- 
-+    public boolean shouldLoadSpawn(){ return this.shouldLoadSpawn; }
-+    public DimensionType setLoadSpawn(boolean value) { this.shouldLoadSpawn = value; return this; }
-+
-+    private static Class<?>[] ENUM_ARGS = {int.class, String.class, String.class, Class.class};
-+    static { net.minecraftforge.common.util.EnumHelper.testEnum(DimensionType.class, ENUM_ARGS); }
-+    public static DimensionType register(String name, String suffix, int id, Class<? extends WorldProvider> provider, boolean keepLoaded)
-+    {
-+        String enum_name = name.replace(" ", "_").toLowerCase();
-+        DimensionType ret = net.minecraftforge.common.util.EnumHelper.addEnum(DimensionType.class, enum_name, ENUM_ARGS,
-+                id, name, suffix, provider);
-+        return ret.setLoadSpawn(keepLoaded);
-+    }
-+    //TODO: Unregister? There is no way to really delete a enum value...
-+
-\ No newline at end of file
-     public static DimensionType func_193417_a(String p_193417_0_)
-     {
-         for (DimensionType dimensiontype : values())
+--- a/net/minecraft/world/DimensionType.java
++++ b/net/minecraft/world/DimensionType.java
+@@ -55,7 +55,7 @@
+    public static final RegistryKey<DimensionType> field_235999_c_ = RegistryKey.func_240903_a_(Registry.field_239698_ad_, new ResourceLocation("overworld"));
+    public static final RegistryKey<DimensionType> field_236000_d_ = RegistryKey.func_240903_a_(Registry.field_239698_ad_, new ResourceLocation("the_nether"));
+    public static final RegistryKey<DimensionType> field_236001_e_ = RegistryKey.func_240903_a_(Registry.field_239698_ad_, new ResourceLocation("the_end"));
+-   protected static final DimensionType field_236004_h_ = new DimensionType(OptionalLong.empty(), true, false, false, true, 1.0D, false, false, true, false, true, 256, ColumnFuzzedBiomeMagnifier.INSTANCE, BlockTags.field_241277_aC_.func_230234_a_(), field_242710_a, 0.0F);
++   public static final DimensionType field_236004_h_ = new DimensionType(OptionalLong.empty(), true, false, false, true, 1.0D, false, false, true, false, true, 256, ColumnFuzzedBiomeMagnifier.INSTANCE, BlockTags.field_241277_aC_.func_230234_a_(), field_242710_a, 0.0F);
+    protected static final DimensionType field_236005_i_ = new DimensionType(OptionalLong.of(18000L), false, true, true, false, 8.0D, false, true, false, true, false, 128, FuzzedBiomeMagnifier.INSTANCE, BlockTags.field_241278_aD_.func_230234_a_(), field_242711_b, 0.1F);
+    protected static final DimensionType field_236006_j_ = new DimensionType(OptionalLong.of(6000L), false, false, false, false, 1.0D, true, false, false, false, true, 256, FuzzedBiomeMagnifier.INSTANCE, BlockTags.field_241279_aE_.func_230234_a_(), field_242712_c, 0.0F);
+    public static final RegistryKey<DimensionType> field_241497_i_ = RegistryKey.func_240903_a_(Registry.field_239698_ad_, new ResourceLocation("overworld_caves"));

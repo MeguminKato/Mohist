@@ -1,28 +1,22 @@
---- ../src-base/minecraft/net/minecraft/network/datasync/DataSerializers.java
-+++ ../src-work/minecraft/net/minecraft/network/datasync/DataSerializers.java
-@@ -305,20 +305,21 @@
-         }
-     };
+--- a/net/minecraft/network/datasync/DataSerializers.java
++++ b/net/minecraft/network/datasync/DataSerializers.java
+@@ -301,16 +301,16 @@
+    };
  
-+    @Deprecated // Forge: ONLY FOR VANILLA - mods should use the Forge registry
-     public static void func_187189_a(DataSerializer<?> p_187189_0_)
-     {
--        field_187204_n.func_186808_c(p_187189_0_);
-+        if (field_187204_n.func_186808_c(p_187189_0_) >= 256) throw new RuntimeException("Vanilla DataSerializer ID limit exceeded");
-     }
+    public static void func_187189_a(IDataSerializer<?> p_187189_0_) {
+-      field_187204_n.func_186808_c(p_187189_0_);
++      if (field_187204_n.func_186808_c(p_187189_0_) >= 256) throw new RuntimeException("Vanilla DataSerializer ID limit exceeded");
+    }
  
-     @Nullable
-     public static DataSerializer<?> func_187190_a(int p_187190_0_)
-     {
--        return (DataSerializer)field_187204_n.func_186813_a(p_187190_0_);
-+        return net.minecraftforge.common.ForgeHooks.getSerializer(p_187190_0_, field_187204_n);
-     }
+    @Nullable
+    public static IDataSerializer<?> func_187190_a(int p_187190_0_) {
+-      return field_187204_n.func_148745_a(p_187190_0_);
++      return net.minecraftforge.common.ForgeHooks.getSerializer(p_187190_0_, field_187204_n);
+    }
  
-     public static int func_187188_b(DataSerializer<?> p_187188_0_)
-     {
--        return field_187204_n.func_186815_a(p_187188_0_);
-+        return net.minecraftforge.common.ForgeHooks.getSerializerId(p_187188_0_, field_187204_n);
-\ No newline at end of file
-     }
+    public static int func_187188_b(IDataSerializer<?> p_187188_0_) {
+-      return field_187204_n.func_148757_b(p_187188_0_);
++      return net.minecraftforge.common.ForgeHooks.getSerializerId(p_187188_0_, field_187204_n);
+    }
  
-     static
+    static {

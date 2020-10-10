@@ -2,6 +2,7 @@ package org.bukkit.event.block;
 
 import org.bukkit.block.Block;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * An event that's called when a block yields experience.
@@ -10,14 +11,10 @@ public class BlockExpEvent extends BlockEvent {
     private static final HandlerList handlers = new HandlerList();
     private int exp;
 
-    public BlockExpEvent(Block block, int exp) {
+    public BlockExpEvent(@NotNull Block block, int exp) {
         super(block);
 
         this.exp = exp;
-    }
-
-    public static HandlerList getHandlerList() {
-        return handlers;
     }
 
     /**
@@ -39,7 +36,14 @@ public class BlockExpEvent extends BlockEvent {
         this.exp = exp;
     }
 
+    @Override
+    @NotNull
     public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    @NotNull
+    public static HandlerList getHandlerList() {
         return handlers;
     }
 }

@@ -19,39 +19,35 @@
 
 package net.minecraftforge.client.event;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.player.EntityPlayer;
+import com.mojang.blaze3d.matrix.MatrixStack;
+
+import net.minecraft.block.BlockState;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
-import net.minecraftforge.fml.common.eventhandler.Event;
+import net.minecraftforge.eventbus.api.Cancelable;
+import net.minecraftforge.eventbus.api.Event;
 
 /**
  * Called when a block's texture is going to be overlaid on the player's HUD. Cancel this event to prevent the overlay.
  */
 @Cancelable
-public class RenderBlockOverlayEvent extends Event {
+public class RenderBlockOverlayEvent extends Event
+{
 
     public static enum OverlayType {
         FIRE, BLOCK, WATER
     }
     
-    private final EntityPlayer player;
-    private final float renderPartialTicks;
+    private final PlayerEntity player;
+    private final MatrixStack mat;
     private final OverlayType overlayType;
-    private final IBlockState blockForOverlay;
+    private final BlockState blockForOverlay;
     private final BlockPos blockPos;
     
-    @Deprecated
-    public RenderBlockOverlayEvent(EntityPlayer player, float renderPartialTicks, OverlayType type, Block block, int x, int y, int z)
-    {
-        this(player, renderPartialTicks, type, block.getDefaultState(), new BlockPos(x, y, z));
-    }
-    
-    public RenderBlockOverlayEvent(EntityPlayer player, float renderPartialTicks, OverlayType type, IBlockState block, BlockPos blockPos)
+    public RenderBlockOverlayEvent(PlayerEntity player, MatrixStack mat, OverlayType type, BlockState block, BlockPos blockPos)
     {
         this.player = player;
-        this.renderPartialTicks = renderPartialTicks;
+        this.mat = mat;
         this.overlayType = type;
         this.blockForOverlay = block;
         this.blockPos = blockPos;
@@ -61,8 +57,8 @@ public class RenderBlockOverlayEvent extends Event {
     /**
      * The player which the overlay will apply to
      */
-    public EntityPlayer getPlayer() { return player; }
-    public float getRenderPartialTicks() { return renderPartialTicks; }
+    public PlayerEntity getPlayer() { return player; }
+    public MatrixStack getMatrixStack() { return mat; }
     /**
      * The type of overlay to occur
      */
@@ -70,6 +66,6 @@ public class RenderBlockOverlayEvent extends Event {
     /**
      * If the overlay type is BLOCK, then this is the block which the overlay is getting it's icon from
      */
-    public IBlockState getBlockForOverlay() { return blockForOverlay; }
+    public BlockState getBlockForOverlay() { return blockForOverlay; }
     public BlockPos getBlockPos() { return blockPos; }
 }

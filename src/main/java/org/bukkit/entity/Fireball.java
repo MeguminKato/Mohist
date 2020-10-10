@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a Fireball.
@@ -8,17 +9,18 @@ import org.bukkit.util.Vector;
 public interface Fireball extends Projectile, Explosive {
 
     /**
-     * Retrieve the direction this fireball is heading toward
-     *
-     * @return the direction
-     */
-    public Vector getDirection();
-
-    /**
      * Fireballs fly straight and do not take setVelocity(...) well.
      *
      * @param direction the direction this fireball is flying toward
      */
-    public void setDirection(Vector direction);
+    public void setDirection(@NotNull Vector direction);
+
+    /**
+     * Retrieve the direction this fireball is heading toward
+     *
+     * @return the direction
+     */
+    @NotNull
+    public Vector getDirection();
 
 }

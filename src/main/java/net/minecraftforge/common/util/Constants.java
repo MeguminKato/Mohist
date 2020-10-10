@@ -19,7 +19,14 @@
 
 package net.minecraftforge.common.util;
 
-import net.minecraft.entity.ai.attributes.ModifiableAttributeInstance;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.particles.ParticleTypes;
+import net.minecraft.util.Direction;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.IWorld;
+import net.minecraft.world.World;
 
 /**
  * A class containing constants for magic numbers used in the minecraft codebase.
@@ -28,10 +35,10 @@ import net.minecraft.entity.ai.attributes.ModifiableAttributeInstance;
 public class Constants
 {
     /**
-     * NBT Tag type IDS, used when storing the nbt to disc, Should align with NBTBase.getId,
-     * table used in NBTBase.func_150283_g
+     * NBT Tag type IDS, used when storing the nbt to disc, Should align with {@link net.minecraft.nbt.INBT#create}
+     * and {@link net.minecraft.nbt.INBT#getTypeName}
      *
-     * Main use is checking tag type in NBTTagCompound.func_150297_b(String, int)
+     * Main use is checking tag type in {@link net.minecraft.nbt.CompoundNBT#contains(String, int)}
      *
      */
     public static class NBT
@@ -53,8 +60,8 @@ public class Constants
     }
 
     /**
-     * The world event IDS, used when calling {@link net.minecraft.world.World#playEvent(net.minecraft.entity.player.EntityPlayer, int, net.minecraft.util.math.BlockPos, int)}. <br>
-     * Can be found from {@link net.minecraft.client.renderer.RenderGlobal#playEvent}<br>
+     * The world event IDS, used when calling {@link IWorld#playEvent(int, BlockPos, int)}. <br>
+     * Can be found from {@link net.minecraft.client.renderer.WorldRenderer#playEvent}<br>
      * Some of the events use the {@code data} parameter. If this is the case, an explanation of what {@code data} does is also provided
      */
     public static class WorldEvents {
@@ -101,18 +108,21 @@ public class Constants
         public static final int BREWING_STAND_BREW_SOUND        = 1035;
         public static final int IRON_TRAPDOOR_CLOSE_SOUND       = 1036;
         public static final int IRON_TRAPDOOR_OPEN_SOUND        = 1037;
+        public static final int PHANTOM_BITE_SOUND              = 1039;
+        public static final int ZOMBIE_CONVERT_TO_DROWNED_SOUND = 1040;
+        public static final int HUSK_CONVERT_TO_ZOMBIE_SOUND    = 1041;
+        public static final int GRINDSTONE_USE_SOUND            = 1042;
+        public static final int ITEM_BOOK_TURN_PAGE_SOUND       = 1043;
         /**
-         * {@code data} is the direction of the smoke, as a grid around the dispenser as follows (with 4 being the position of the dispenser):
-         * <pre>
-         *        N
-         *    0 | 1 | 2
-         *    ----------
-         * W  3 | 4 | 5  E
-         *    ----------
-         *    6 | 7 | 8
-         *        S
-         * </pre>
-         * Setting the {@code data} to 4 will mean the particles won't spawn
+         * Spawns the composter particles and plays the sound event sound event<br>
+         * {@code data} is bigger than 0 when the composter can still be filled up, and is smaller or equal to 0 when the composter is full. (This only effects the sound event)
+         */
+        public static final int COMPOSTER_FILLED_UP             = 1500;
+        public static final int LAVA_EXTINGUISH                 = 1501;
+        public static final int REDSTONE_TORCH_BURNOUT          = 1502;
+        public static final int END_PORTAL_FRAME_FILL           = 1503;
+        /**
+         * {@code data} is the {@link Direction#getIndex()} of the direction the smoke is to come out of.
          */
         public static final int DISPENSER_SMOKE                 = 2000;
 
@@ -121,9 +131,10 @@ public class Constants
          */
         public static final int BREAK_BLOCK_EFFECTS             = 2001;
         /**
-         * {@code data} is the rgb color int that should be used for the potion particles
+         * {@code data} is the rgb color int that should be used for the potion particles<br>
+         * This is the same as {@link Constants.WorldEvents#POTION_IMPACT} but uses the particle type {@link ParticleTypes#EFFECT}
          */
-        public static final int SPLASH_POTION_EFFECT            = 2002;
+        public static final int POTION_IMPACT_INSTANT           = 2002;
         public static final int ENDER_EYE_SHATTER               = 2003;
         public static final int MOB_SPAWNER_PARTICLES           = 2004;
         /**
@@ -132,89 +143,70 @@ public class Constants
         public static final int BONEMEAL_PARTICLES              = 2005;
         public static final int DRAGON_FIREBALL_HIT             = 2006;
         /**
-         * {@code data} is the rgb color int that should be used for the potion particles
+         * {@code data} is the rgb color int that should be used for the potion particles<br>
+         * This is the same as {@link Constants.WorldEvents#POTION_IMPACT_INSTANT} but uses the particle type {@link ParticleTypes#INSTANT_EFFECT}
          */
-        public static final int LINGERING_POTION_EFFECT         = 2007;
+        public static final int POTION_IMPACT                   = 2007;
+        public static final int SPAWN_EXPLOSION_PARTICLE        = 2008;
         public static final int GATEWAY_SPAWN_EFFECTS           = 3000;
         public static final int ENDERMAN_GROWL_SOUND            = 3001;
     }
 
 
     /**
-     * The flags used when calling {@link net.minecraft.world.World#setBlockState}<br>
-     * Can be found from {@link net.minecraft.world.World#markAndNotifyBlock} and {@link net.minecraft.client.renderer.RenderGlobal#notifyBlockUpdate}<br>
+     * The flags used when calling
+     * {@link net.minecraft.world.IWorldWriter#setBlockState(BlockPos, BlockState, int)}<br>
+     * Can be found from {@link World#setBlockState(BlockPos, BlockState, int)},
+     * {@link World#markAndNotifyBlock}, and
+     * {@link WorldRenderer#notifyBlockUpdate}<br>
      * Flags can be combined with bitwise OR
      */
     public static class BlockFlags {
         /**
-         * Calls neighborChanged on surrounding blocks
+         * Calls
+         * {@link Block#neighborChanged(BlockState, World, BlockPos, Block, BlockPos, boolean)
+         * neighborChanged} on surrounding blocks (with isMoving as false). Also updates comparator output state.
          */
-        public static final int NOTIFY_NEIGHBORS     = 0b00001;
+        public static final int NOTIFY_NEIGHBORS     = (1 << 0);
         /**
-         * Sends the update to the client
+         * Calls {@link World#notifyBlockUpdate(BlockPos, BlockState, BlockState, int)}.<br>
+         * Server-side, this updates all the path-finding navigators.
          */
-        public static final int SEND_TO_CLIENTS      = 0b00010;
+        public static final int BLOCK_UPDATE         = (1 << 1);
         /**
          * Stops the blocks from being marked for a render update
          */
-        public static final int NO_RERENDER          = 0b00100;
+        public static final int NO_RERENDER          = (1 << 2);
         /**
          * Makes the block be re-rendered immediately, on the main thread.
          * If NO_RERENDER is set, then this will be ignored
          */
-        public static final int RERENDER_MAIN_THREAD = 0b01000;
+        public static final int RERENDER_MAIN_THREAD = (1 << 3);
         /**
-         * Disables observers from seeing this update
+         * Causes neighbor updates to be sent to all surrounding blocks (including
+         * diagonals). This in turn will call
+         * {@link Block#updateDiagonalNeighbors(BlockState, IWorld, BlockPos, int)
+         * updateDiagonalNeighbors} on both old and new states, and
+         * {@link Block#updateNeighbors(BlockState, IWorld, BlockPos, int)
+         * updateNeighbors} on the new state.
          */
-        public static final int NO_OBSERVERS         = 0b10000;
+        public static final int UPDATE_NEIGHBORS     = (1 << 4);
 
-        public static final int DEFAULT = NOTIFY_NEIGHBORS | SEND_TO_CLIENTS;
+        /**
+         * Prevents neighbor changes from spawning item drops, used by
+         * {@link Block#replaceBlock(BlockState, BlockState, IWorld, BlockPos, int)}.
+         */
+        public static final int NO_NEIGHBOR_DROPS    = (1 << 5);
+
+        /**
+         * Tell the block being changed that it was moved, rather than removed/replaced,
+         * the boolean value is eventually passed to
+         * {@link Block#onReplaced(BlockState, World, BlockPos, BlockState, boolean)}
+         * as the last parameter.
+         */
+        public static final int IS_MOVING            = (1 << 6);
+
+        public static final int DEFAULT = NOTIFY_NEIGHBORS | BLOCK_UPDATE;
         public static final int DEFAULT_AND_RERENDER = DEFAULT | RERENDER_MAIN_THREAD;
     }
-
-    /**
-     * The mutex bits used for AI tasks {@link net.minecraft.entity.ai.EntityAIBase#setMutexBits(int)}
-     * Bits can be combined with bitwise OR
-     */
-    public static class AiMutexBits {
-        public static final int MOVE = 0b001;
-        public static final int LOOK = 0b010;
-        public static final int JUMP = 0b100;
-    }
-
-    /**
-     * The flags used for {@link net.minecraft.entity.Entity#getFlag(int)} and {@link net.minecraft.entity.Entity#setFlag(int, boolean)}}<br>
-     * Can be found by searching for the usages of getFlag
-     */
-    public static class EntityFlags {
-        public static final int BURNING       = 0;
-        public static final int SNEAKING      = 1;
-        public static final int SPRINTING     = 3;
-        public static final int INVISIBLE     = 5;
-        public static final int GLOWING       = 6;
-        public static final int ELYTRA_FLYING = 7;
-    }
-
-    /**
-     * The operation used for Attribute modifier operations, {@link net.minecraft.entity.ai.attributes.AttributeModifier#AttributeModifier(String, double, int)}<br>
-     * Can be found at {@link ModifiableAttributeInstance#computeValue()}<br>
-     * The total value starts with the base value.<br>
-     * Order of operations are {@link #ADD}, {@link #ADD_MULTIPLE}, {@link #MULTIPLY}
-     * @see <a href="https://minecraft.gamepedia.com/Attribute#Operations">Minecraft Wiki</a>
-     */
-    public static class AttributeModifierOperation {
-        /**
-         * The modifier value is added onto the total value
-         */
-        public static final int ADD          = 0;
-        /**
-         * The modifier value is multiplied by the original base value then added onto the total value
-         */
-        public static final int ADD_MULTIPLE = 1;
-        /**
-         * The total value is multiplied by 1 + the modifier value
-         */
-        public static final int MULTIPLY     = 2;
-    }
-
 }

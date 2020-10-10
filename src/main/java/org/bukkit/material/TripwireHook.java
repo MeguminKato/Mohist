@@ -5,29 +5,24 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents the tripwire hook
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class TripwireHook extends SimpleAttachableMaterialData implements Redstone {
 
     public TripwireHook() {
-        super(Material.TRIPWIRE_HOOK);
+        super(Material.LEGACY_TRIPWIRE_HOOK);
     }
 
     /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-
-    public TripwireHook(final int type) {
-        super(type);
-    }
-
-    /**
-     * @param type the raw type id
+     * @param type the type
      * @param data the raw data value
      * @deprecated Magic value
      */
-
-    public TripwireHook(final int type, final byte data) {
+    @Deprecated
+    public TripwireHook(final Material type, final byte data) {
         super(type, data);
     }
 
@@ -80,39 +75,42 @@ public class TripwireHook extends SimpleAttachableMaterialData implements Redsto
         setData((byte) dat);
     }
 
+    @Override
     public void setFacingDirection(BlockFace face) {
         int dat = getData() & 0xC;
         switch (face) {
-            case WEST:
-                dat |= 0x1;
-                break;
-            case NORTH:
-                dat |= 0x2;
-                break;
-            case EAST:
-                dat |= 0x3;
-                break;
-            case SOUTH:
-            default:
-                break;
+        case WEST:
+            dat |= 0x1;
+            break;
+        case NORTH:
+            dat |= 0x2;
+            break;
+        case EAST:
+            dat |= 0x3;
+            break;
+        case SOUTH:
+        default:
+            break;
         }
         setData((byte) dat);
     }
 
+    @Override
     public BlockFace getAttachedFace() {
         switch (getData() & 0x3) {
-            case 0:
-                return BlockFace.NORTH;
-            case 1:
-                return BlockFace.EAST;
-            case 2:
-                return BlockFace.SOUTH;
-            case 3:
-                return BlockFace.WEST;
+        case 0:
+            return BlockFace.NORTH;
+        case 1:
+            return BlockFace.EAST;
+        case 2:
+            return BlockFace.SOUTH;
+        case 3:
+            return BlockFace.WEST;
         }
         return null;
     }
 
+    @Override
     public boolean isPowered() {
         return isActivated();
     }

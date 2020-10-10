@@ -21,6 +21,13 @@ public interface PigZombie extends Zombie {
     void setAnger(int level);
 
     /**
+     * Shorthand; sets to either 0 or the default level.
+     *
+     * @param angry Whether the zombie should be angry.
+     */
+    void setAngry(boolean angry);
+
+    /**
      * Shorthand; gets whether the zombie is angry.
      *
      * @return True if the zombie is angry, otherwise false.
@@ -28,9 +35,26 @@ public interface PigZombie extends Zombie {
     boolean isAngry();
 
     /**
-     * Shorthand; sets to either 0 or the default level.
+     * <b>Not applicable to this entity</b>
      *
-     * @param angry Whether the zombie should be angry.
+     * @return false
      */
-    void setAngry(boolean angry);
+    @Override
+    public boolean isConverting();
+
+    /**
+     * <b>Not applicable to this entity</b>
+     *
+     * @return UnsuppotedOperationException
+     */
+    @Override
+    public int getConversionTime();
+
+    /**
+     * <b>Not applicable to this entity</b>
+     *
+     * @param time unused
+     */
+    @Override
+    public void setConversionTime(int time);
 }

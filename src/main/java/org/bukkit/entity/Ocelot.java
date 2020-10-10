@@ -1,15 +1,20 @@
+
 package org.bukkit.entity;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A wild tameable cat
  */
-public interface Ocelot extends Animals, Tameable, Sittable {
+public interface Ocelot extends Animals {
 
     /**
      * Gets the current type of this cat.
      *
      * @return Type of the cat.
      */
+    @NotNull
     public Type getCatType();
 
     /**
@@ -17,11 +22,14 @@ public interface Ocelot extends Animals, Tameable, Sittable {
      *
      * @param type New type of this cat.
      */
-    public void setCatType(Type type);
+    public void setCatType(@NotNull Type type);
 
     /**
      * Represents the various different cat types there are.
+     *
+     * @deprecated Cats are now a separate entity.
      */
+    @Deprecated
     public enum Type {
         WILD_OCELOT(0),
         BLACK_CAT(1),
@@ -29,6 +37,7 @@ public interface Ocelot extends Animals, Tameable, Sittable {
         SIAMESE_CAT(3);
 
         private static final Type[] types = new Type[Type.values().length];
+        private final int id;
 
         static {
             for (Type type : values()) {
@@ -36,22 +45,8 @@ public interface Ocelot extends Animals, Tameable, Sittable {
             }
         }
 
-        private final int id;
-
         private Type(int id) {
             this.id = id;
-        }
-
-        /**
-         * Gets a cat type by its ID.
-         *
-         * @param id ID of the cat type to get.
-         * @return Resulting type, or null if not found.
-         * @deprecated Magic value
-         */
-        @Deprecated
-        public static Type getType(int id) {
-            return (id >= types.length) ? null : types[id];
         }
 
         /**
@@ -63,6 +58,19 @@ public interface Ocelot extends Animals, Tameable, Sittable {
         @Deprecated
         public int getId() {
             return id;
+        }
+
+        /**
+         * Gets a cat type by its ID.
+         *
+         * @param id ID of the cat type to get.
+         * @return Resulting type, or null if not found.
+         * @deprecated Magic value
+         */
+        @Deprecated
+        @Nullable
+        public static Type getType(int id) {
+            return (id >= types.length) ? null : types[id];
         }
     }
 }

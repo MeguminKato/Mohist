@@ -1,102 +1,91 @@
---- ../src-base/minecraft/net/minecraft/client/renderer/ItemRenderer.java
-+++ ../src-work/minecraft/net/minecraft/client/renderer/ItemRenderer.java
-@@ -216,7 +216,7 @@
-         bufferbuilder.func_181662_b(135.0D, -7.0D, 0.0D).func_187315_a(1.0D, 0.0D).func_181675_d();
-         bufferbuilder.func_181662_b(-7.0D, -7.0D, 0.0D).func_187315_a(0.0D, 0.0D).func_181675_d();
-         tessellator.func_78381_a();
--        MapData mapdata = Items.field_151098_aY.func_77873_a(p_187461_1_, this.field_78455_a.field_71441_e);
-+        MapData mapdata = ((net.minecraft.item.ItemMap) p_187461_1_.func_77973_b()).func_77873_a(p_187461_1_, this.field_78455_a.field_71441_e);
+--- a/net/minecraft/client/renderer/ItemRenderer.java
++++ b/net/minecraft/client/renderer/ItemRenderer.java
+@@ -59,7 +59,7 @@
  
-         if (mapdata != null)
-         {
-@@ -312,7 +312,7 @@
-         {
-             ItemStack itemstack = abstractclientplayer.func_184607_cu();
+    public ItemRenderer(TextureManager p_i46552_1_, ModelManager p_i46552_2_, ItemColors p_i46552_3_) {
+       this.field_175057_n = p_i46552_1_;
+-      this.field_175059_m = new ItemModelMesher(p_i46552_2_);
++      this.field_175059_m = new net.minecraftforge.client.ItemModelMesherForge(p_i46552_2_);
  
--            if (itemstack.func_77973_b() == Items.field_151031_f)
-+            if (itemstack.func_77973_b() instanceof net.minecraft.item.ItemBow)
-             {
-                 EnumHand enumhand1 = abstractclientplayer.func_184600_cs();
-                 flag = enumhand1 == EnumHand.MAIN_HAND;
-@@ -329,6 +329,7 @@
-         {
-             float f3 = enumhand == EnumHand.MAIN_HAND ? f : 0.0F;
-             float f5 = 1.0F - (this.field_187470_g + (this.field_187469_f - this.field_187470_g) * p_78440_1_);
-+            if(!net.minecraftforge.client.ForgeHooksClient.renderSpecificFirstPersonHand(EnumHand.MAIN_HAND, p_78440_1_, f1, f3, f5, this.field_187467_d))
-             this.func_187457_a(abstractclientplayer, p_78440_1_, f1, EnumHand.MAIN_HAND, f3, this.field_187467_d, f5);
-         }
+       for(Item item : Registry.field_212630_s) {
+          if (!field_195411_c.contains(item)) {
+@@ -95,7 +95,7 @@
+             p_229111_8_ = this.field_175059_m.func_178083_a().func_174953_a(new ModelResourceLocation("minecraft:trident#inventory"));
+          }
  
-@@ -336,6 +337,7 @@
-         {
-             float f4 = enumhand == EnumHand.OFF_HAND ? f : 0.0F;
-             float f6 = 1.0F - (this.field_187472_i + (this.field_187471_h - this.field_187472_i) * p_78440_1_);
-+            if(!net.minecraftforge.client.ForgeHooksClient.renderSpecificFirstPersonHand(EnumHand.OFF_HAND, p_78440_1_, f1, f4, f6, this.field_187468_e))
-             this.func_187457_a(abstractclientplayer, p_78440_1_, f1, EnumHand.OFF_HAND, f4, this.field_187468_e, f6);
-         }
- 
-@@ -356,7 +358,7 @@
-                 this.func_187456_a(p_187457_7_, p_187457_5_, enumhandside);
+-         p_229111_8_.func_177552_f().func_181688_b(p_229111_2_).func_228830_a_(p_229111_3_, p_229111_4_);
++         p_229111_8_ = net.minecraftforge.client.ForgeHooksClient.handleCameraTransforms(p_229111_4_, p_229111_8_, p_229111_2_, p_229111_3_);
+          p_229111_4_.func_227861_a_(-0.5D, -0.5D, -0.5D);
+          if (!p_229111_8_.func_188618_c() && (p_229111_1_.func_77973_b() != Items.field_203184_eO || flag)) {
+             boolean flag1;
+@@ -105,7 +105,8 @@
+             } else {
+                flag1 = true;
              }
-         }
--        else if (p_187457_6_.func_77973_b() == Items.field_151098_aY)
-+        else if (p_187457_6_.func_77973_b() instanceof net.minecraft.item.ItemMap)
-         {
-             if (flag && this.field_187468_e.func_190926_b())
-             {
-@@ -440,6 +442,7 @@
-         if (this.field_78455_a.field_71439_g.func_70094_T())
-         {
-             IBlockState iblockstate = this.field_78455_a.field_71441_e.func_180495_p(new BlockPos(this.field_78455_a.field_71439_g));
-+            BlockPos overlayPos = new BlockPos(this.field_78455_a.field_71439_g);
-             EntityPlayer entityplayer = this.field_78455_a.field_71439_g;
- 
-             for (int i = 0; i < 8; ++i)
-@@ -453,11 +456,13 @@
-                 if (iblockstate1.func_191058_s())
-                 {
-                     iblockstate = iblockstate1;
-+                    overlayPos = blockpos;
-                 }
+-
++            if (p_229111_8_.isLayered()) { net.minecraftforge.client.ForgeHooksClient.drawItemLayered(this, p_229111_8_, p_229111_1_, p_229111_4_, p_229111_5_, p_229111_6_, p_229111_7_, flag1); }
++            else {
+             RenderType rendertype = RenderTypeLookup.func_239219_a_(p_229111_1_, flag1);
+             IVertexBuilder ivertexbuilder;
+             if (p_229111_1_.func_77973_b() == Items.field_151111_aL && p_229111_1_.func_77962_s()) {
+@@ -131,8 +132,9 @@
              }
  
-             if (iblockstate.func_185901_i() != EnumBlockRenderType.INVISIBLE)
-             {
-+                if (!net.minecraftforge.event.ForgeEventFactory.renderBlockOverlay(field_78455_a.field_71439_g, p_78447_1_, net.minecraftforge.client.event.RenderBlockOverlayEvent.OverlayType.BLOCK, iblockstate, overlayPos))
-                 this.func_178108_a(this.field_78455_a.func_175602_ab().func_175023_a().func_178122_a(iblockstate));
-             }
-         }
-@@ -466,11 +471,13 @@
-         {
-             if (this.field_78455_a.field_71439_g.func_70055_a(Material.field_151586_h))
-             {
-+                if (!net.minecraftforge.event.ForgeEventFactory.renderWaterOverlay(field_78455_a.field_71439_g, p_78447_1_))
-                 this.func_78448_c(p_78447_1_);
-             }
+             this.func_229114_a_(p_229111_8_, p_229111_1_, p_229111_6_, p_229111_7_, p_229111_4_, ivertexbuilder);
++            }
+          } else {
+-            ItemStackTileEntityRenderer.field_147719_a.func_239207_a_(p_229111_1_, p_229111_2_, p_229111_4_, p_229111_5_, p_229111_6_, p_229111_7_);
++            p_229111_1_.func_77973_b().getItemStackTileEntityRenderer().func_239207_a_(p_229111_1_, p_229111_2_, p_229111_4_, p_229111_5_, p_229111_6_, p_229111_7_);
+          }
  
-             if (this.field_78455_a.field_71439_g.func_70027_ad())
-             {
-+                if (!net.minecraftforge.event.ForgeEventFactory.renderFireOverlay(field_78455_a.field_71439_g, p_78447_1_))
-                 this.func_78442_d();
-             }
-         }
-@@ -592,8 +599,17 @@
-         else
-         {
-             float f = entityplayersp.func_184825_o(1.0F);
--            this.field_187469_f += MathHelper.func_76131_a((Objects.equals(this.field_187467_d, itemstack) ? f * f * f : 0.0F) - this.field_187469_f, -0.4F, 0.4F);
--            this.field_187471_h += MathHelper.func_76131_a((float)(Objects.equals(this.field_187468_e, itemstack1) ? 1 : 0) - this.field_187471_h, -0.4F, 0.4F);
+          p_229111_4_.func_227865_b_();
+@@ -176,7 +178,7 @@
+          float f = (float)(i >> 16 & 255) / 255.0F;
+          float f1 = (float)(i >> 8 & 255) / 255.0F;
+          float f2 = (float)(i & 255) / 255.0F;
+-         p_229112_2_.func_227889_a_(matrixstack$entry, bakedquad, f, f1, f2, p_229112_5_, p_229112_6_);
++         p_229112_2_.addVertexData(matrixstack$entry, bakedquad, f, f1, f2, p_229112_5_, p_229112_6_, true);
+       }
+ 
+    }
+@@ -267,6 +269,7 @@
+             crashreportcategory.func_189529_a("Item Type", () -> {
+                return String.valueOf((Object)p_239387_2_.func_77973_b());
+             });
++            crashreportcategory.func_189529_a("Registry Name", () -> String.valueOf(p_239387_2_.func_77973_b().getRegistryName()));
+             crashreportcategory.func_189529_a("Item Damage", () -> {
+                return String.valueOf(p_239387_2_.func_77952_i());
+             });
+@@ -298,18 +301,16 @@
+             irendertypebuffer$impl.func_228461_a_();
+          }
+ 
+-         if (p_180453_2_.func_77951_h()) {
++         if (p_180453_2_.func_77973_b().showDurabilityBar(p_180453_2_)) {
+             RenderSystem.disableDepthTest();
+             RenderSystem.disableTexture();
+             RenderSystem.disableAlphaTest();
+             RenderSystem.disableBlend();
+             Tessellator tessellator = Tessellator.func_178181_a();
+             BufferBuilder bufferbuilder = tessellator.func_178180_c();
+-            float f = (float)p_180453_2_.func_77952_i();
+-            float f1 = (float)p_180453_2_.func_77958_k();
+-            float f2 = Math.max(0.0F, (f1 - f) / f1);
+-            int i = Math.round(13.0F - f * 13.0F / f1);
+-            int j = MathHelper.func_181758_c(f2 / 3.0F, 1.0F, 1.0F);
++            double health = p_180453_2_.func_77973_b().getDurabilityForDisplay(p_180453_2_);
++            int i = Math.round(13.0F - (float)health * 13.0F);
++            int j = p_180453_2_.func_77973_b().getRGBDurabilityForDisplay(p_180453_2_);
+             this.func_181565_a(bufferbuilder, p_180453_3_ + 2, p_180453_4_ + 13, 13, 2, 0, 0, 0, 255);
+             this.func_181565_a(bufferbuilder, p_180453_3_ + 2, p_180453_4_ + 13, i, 1, j >> 16 & 255, j >> 8 & 255, j & 255, 255);
+             RenderSystem.enableBlend();
+@@ -347,4 +348,9 @@
+    public void func_195410_a(IResourceManager p_195410_1_) {
+       this.field_175059_m.func_178085_b();
+    }
 +
-+            boolean requipM = net.minecraftforge.client.ForgeHooksClient.shouldCauseReequipAnimation(this.field_187467_d, itemstack, entityplayersp.field_71071_by.field_70461_c);
-+            boolean requipO = net.minecraftforge.client.ForgeHooksClient.shouldCauseReequipAnimation(this.field_187468_e, itemstack1, -1);
-+
-+            if (!requipM && !Objects.equals(this.field_187467_d, itemstack))
-+                this.field_187467_d = itemstack;
-+            if (!requipM && !Objects.equals(this.field_187468_e, itemstack1))
-+                this.field_187468_e = itemstack1;
-+
-+            this.field_187469_f += MathHelper.func_76131_a((!requipM ? f * f * f : 0.0F) - this.field_187469_f, -0.4F, 0.4F);
-+            this.field_187471_h += MathHelper.func_76131_a((float)(!requipO ? 1 : 0) - this.field_187471_h, -0.4F, 0.4F);
-\ No newline at end of file
-         }
- 
-         if (this.field_187469_f < 0.1F)
++   @Override
++   public net.minecraftforge.resource.IResourceType getResourceType() {
++      return net.minecraftforge.resource.VanillaResourceType.MODELS;
++   }
+ }

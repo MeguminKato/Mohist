@@ -21,16 +21,16 @@ package net.minecraftforge.fluids.capability.templates;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.Direction;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.fluids.capability.FluidTankProperties;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-import net.minecraftforge.fluids.capability.IFluidTankProperties;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 
 /**
  * FluidHandlerItemStackSimple is a template capability provider for ItemStacks.
@@ -41,6 +41,8 @@ import net.minecraftforge.fluids.capability.IFluidTankProperties;
 public class FluidHandlerItemStackSimple implements IFluidHandlerItem, ICapabilityProvider
 {
     public static final String FLUID_NBT_KEY = "Fluid";
+
+    private final LazyOptional<IFluidHandlerItem> holder = LazyOptional.of(() -> this);
 
     @Nonnull
     protected ItemStack container;
@@ -63,51 +65,70 @@ public class FluidHandlerItemStackSimple implements IFluidHandlerItem, ICapabili
         return container;
     }
 
-    @Nullable
+    @Nonnull
     public FluidStack getFluid()
     {
-        NBTTagCompound tagCompound = container.getTagCompound();
-        if (tagCompound == null || !tagCompound.hasKey(FLUID_NBT_KEY))
+        CompoundNBT tagCompound = container.getTag();
+        if (tagCompound == null || !tagCompound.contains(FLUID_NBT_KEY))
         {
-            return null;
+            return FluidStack.EMPTY;
         }
-        return FluidStack.loadFluidStackFromNBT(tagCompound.getCompoundTag(FLUID_NBT_KEY));
+        return FluidStack.loadFluidStackFromNBT(tagCompound.getCompound(FLUID_NBT_KEY));
     }
 
     protected void setFluid(FluidStack fluid)
     {
-        if (!container.hasTagCompound())
+        if (!container.hasTag())
         {
-            container.setTagCompound(new NBTTagCompound());
+            container.setTag(new CompoundNBT());
         }
 
-        NBTTagCompound fluidTag = new NBTTagCompound();
+        CompoundNBT fluidTag = new CompoundNBT();
         fluid.writeToNBT(fluidTag);
-        container.getTagCompound().setTag(FLUID_NBT_KEY, fluidTag);
+        container.getTag().put(FLUID_NBT_KEY, fluidTag);
     }
 
     @Override
-    public IFluidTankProperties[] getTankProperties()
-    {
-        return new IFluidTankProperties[] { new FluidTankProperties(getFluid(), capacity) };
+    public int getTanks() {
+
+        return 1;
+    }
+
+    @Nonnull
+    @Override
+    public FluidStack getFluidInTank(int tank) {
+
+        return getFluid();
     }
 
     @Override
-    public int fill(FluidStack resource, boolean doFill)
+    public int getTankCapacity(int tank) {
+
+        return capacity;
+    }
+
+    @Override
+    public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
+
+        return true;
+    }
+
+    @Override
+    public int fill(@Nonnull FluidStack resource, FluidAction action)
     {
-        if (container.getCount() != 1 || resource == null || resource.amount <= 0 || !canFillFluidType(resource))
+        if (container.getCount() != 1 || resource.isEmpty() || !canFillFluidType(resource))
         {
             return 0;
         }
 
         FluidStack contained = getFluid();
-        if (contained == null)
+        if (contained.isEmpty())
         {
-            int fillAmount = Math.min(capacity, resource.amount);
+            int fillAmount = Math.min(capacity, resource.getAmount());
             if (fillAmount == capacity) {
-                if (doFill) {
+                if (action.execute()) {
                     FluidStack filled = resource.copy();
-                    filled.amount = fillAmount;
+                    filled.setAmount(fillAmount);
                     setFluid(filled);
                 }
 
@@ -118,42 +139,44 @@ public class FluidHandlerItemStackSimple implements IFluidHandlerItem, ICapabili
         return 0;
     }
 
+    @Nonnull
     @Override
-    public FluidStack drain(FluidStack resource, boolean doDrain)
+    public FluidStack drain(FluidStack resource, FluidAction action)
     {
-        if (container.getCount() != 1 || resource == null || resource.amount <= 0 || !resource.isFluidEqual(getFluid()))
+        if (container.getCount() != 1 || resource.isEmpty() || !resource.isFluidEqual(getFluid()))
         {
-            return null;
+            return FluidStack.EMPTY;
         }
-        return drain(resource.amount, doDrain);
+        return drain(resource.getAmount(), action);
     }
 
+    @Nonnull
     @Override
-    public FluidStack drain(int maxDrain, boolean doDrain)
+    public FluidStack drain(int maxDrain, FluidAction action)
     {
         if (container.getCount() != 1 || maxDrain <= 0)
         {
-            return null;
+            return FluidStack.EMPTY;
         }
 
         FluidStack contained = getFluid();
-        if (contained == null || contained.amount <= 0 || !canDrainFluidType(contained))
+        if (contained.isEmpty() || !canDrainFluidType(contained))
         {
-            return null;
+            return FluidStack.EMPTY;
         }
 
-        final int drainAmount = Math.min(contained.amount, maxDrain);
+        final int drainAmount = Math.min(contained.getAmount(), maxDrain);
         if (drainAmount == capacity) {
             FluidStack drained = contained.copy();
 
-            if (doDrain) {
+            if (action.execute()) {
                 setContainerToEmpty();
             }
 
             return drained;
         }
 
-        return null;
+        return FluidStack.EMPTY;
     }
 
     public boolean canFillFluidType(FluidStack fluid)
@@ -173,21 +196,14 @@ public class FluidHandlerItemStackSimple implements IFluidHandlerItem, ICapabili
      */
     protected void setContainerToEmpty()
     {
-        container.getTagCompound().removeTag(FLUID_NBT_KEY);
+        container.removeChildTag(FLUID_NBT_KEY);
     }
 
     @Override
-    public boolean hasCapability(@Nonnull Capability<?> capability, @Nullable EnumFacing facing)
+    @Nonnull
+    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> capability, @Nullable Direction facing)
     {
-        return capability == CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    @Nullable
-    public <T> T getCapability(@Nonnull Capability<T> capability, @Nullable EnumFacing facing)
-    {
-        return capability == CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY ? (T) this : null;
+        return CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY.orEmpty(capability, holder);
     }
 
     /**

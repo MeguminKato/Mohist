@@ -19,11 +19,12 @@
 
 package net.minecraftforge.items.wrapper;
 
-import javax.annotation.Nonnull;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.ItemHandlerHelper;
+
+import javax.annotation.Nonnull;
 
 public class InvWrapper implements IItemHandlerModifiable
 {
@@ -108,7 +109,7 @@ public class InvWrapper implements IItemHandlerModifiable
                 stack = stack.copy();
                 if (!simulate)
                 {
-                    ItemStack copy = stack.splitStack(m);
+                    ItemStack copy = stack.split(m);
                     copy.grow(stackInSlot.getCount());
                     getInv().setInventorySlotContents(slot, copy);
                     getInv().markDirty();
@@ -133,7 +134,7 @@ public class InvWrapper implements IItemHandlerModifiable
                 stack = stack.copy();
                 if (!simulate)
                 {
-                    getInv().setInventorySlotContents(slot, stack.splitStack(m));
+                    getInv().setInventorySlotContents(slot, stack.split(m));
                     getInv().markDirty();
                     return stack;
                 }

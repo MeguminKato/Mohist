@@ -19,36 +19,36 @@
 
 package net.minecraftforge.client;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import net.minecraft.client.renderer.RenderType;
+import org.apache.commons.lang3.tuple.Pair;
+
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.TextureUtil;
-import net.minecraft.client.resources.IResource;
-import net.minecraft.client.resources.IResourceManager;
-import net.minecraft.util.BlockRenderLayer;
+import net.minecraft.client.renderer.chunk.ChunkRenderCache;
+import net.minecraft.client.renderer.texture.NativeImage;
+import net.minecraft.resources.IResource;
+import net.minecraft.resources.IResourceManager;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.ChunkCache;
 import net.minecraft.world.World;
-import org.apache.commons.lang3.tuple.Pair;
 
 public class MinecraftForgeClient
 {
-    public static int getRenderPass()
-    {
-        return ForgeHooksClient.renderPass;
-    }
-
-    public static BlockRenderLayer getRenderLayer()
+    public static RenderType getRenderLayer()
     {
         return ForgeHooksClient.renderLayer.get();
     }
@@ -59,7 +59,7 @@ public class MinecraftForgeClient
      */
     public static Locale getLocale()
     {
-        return Minecraft.getMinecraft().getLanguageManager().getCurrentLanguage().getJavaLocale();
+        return Minecraft.getInstance().getLanguageManager().getCurrentLanguage().getJavaLocale();
     }
 
     private static BitSet stencilBits = new BitSet(8);
@@ -99,25 +99,34 @@ public class MinecraftForgeClient
         }
     }
 
-    private static final LoadingCache<Pair<World, BlockPos>, ChunkCache> regionCache = CacheBuilder.newBuilder()
+    private static final LoadingCache<Pair<World, BlockPos>, Optional<ChunkRenderCache>> regionCache = CacheBuilder.newBuilder()
         .maximumSize(500)
         .concurrencyLevel(5)
         .expireAfterAccess(1, TimeUnit.SECONDS)
-        .build(new CacheLoader<Pair<World, BlockPos>, ChunkCache>()
+        .build(new CacheLoader<Pair<World, BlockPos>, Optional<ChunkRenderCache>>()
         {
             @Override
-            public ChunkCache load(Pair<World, BlockPos> key)
+            public Optional<ChunkRenderCache> load(Pair<World, BlockPos> key)
             {
-                return new ChunkCache(key.getLeft(), key.getRight().add(-1, -1, -1), key.getRight().add(16, 16, 16), 1);
+                return Optional.ofNullable(ChunkRenderCache.generateCache(key.getLeft(), key.getRight().add(-1, -1, -1), key.getRight().add(16, 16, 16), 1));
             }
         });
 
-    public static void onRebuildChunk(World world, BlockPos position, ChunkCache cache)
+    public static void onRebuildChunk(World world, BlockPos position, ChunkRenderCache cache)
     {
-        regionCache.put(Pair.of(world, position), cache);
+        if (cache == null)
+            regionCache.invalidate(Pair.of(world, position));
+        else
+            regionCache.put(Pair.of(world, position), Optional.of(cache));
     }
 
-    public static ChunkCache getRegionRenderCache(World world, BlockPos pos)
+    @Nullable
+    public static ChunkRenderCache getRegionRenderCache(World world, BlockPos pos)
+    {
+        return getRegionRenderCacheOptional(world, pos).orElse(null);
+    }
+
+    public static Optional<ChunkRenderCache> getRegionRenderCacheOptional(World world, BlockPos pos)
     {
         int x = pos.getX() & ~0xF;
         int y = pos.getY() & ~0xF;
@@ -131,22 +140,20 @@ public class MinecraftForgeClient
         regionCache.cleanUp();
     }
 
-    private static HashMap<ResourceLocation, Supplier<BufferedImage>> bufferedImageSuppliers = new HashMap<ResourceLocation, Supplier<BufferedImage>>();
-    public static void registerImageLayerSupplier(ResourceLocation resourceLocation, Supplier<BufferedImage> supplier)
+    private static HashMap<ResourceLocation, Supplier<NativeImage>> bufferedImageSuppliers = new HashMap<ResourceLocation, Supplier<NativeImage>>();
+    public static void registerImageLayerSupplier(ResourceLocation resourceLocation, Supplier<NativeImage> supplier)
     {
         bufferedImageSuppliers.put(resourceLocation, supplier);
     }
 
     @Nonnull
-    public static BufferedImage getImageLayer(ResourceLocation resourceLocation, IResourceManager resourceManager) throws IOException
+    public static NativeImage getImageLayer(ResourceLocation resourceLocation, IResourceManager resourceManager) throws IOException
     {
-        Supplier<BufferedImage> supplier = bufferedImageSuppliers.get(resourceLocation);
+        Supplier<NativeImage> supplier = bufferedImageSuppliers.get(resourceLocation);
         if (supplier != null)
             return supplier.get();
 
-        try (IResource iresource1 = resourceManager.getResource(resourceLocation))
-        {
-            return TextureUtil.readBufferedImage(iresource1.getInputStream());
-        }
+        IResource iresource1 = resourceManager.getResource(resourceLocation);
+        return NativeImage.read(iresource1.getInputStream());
     }
 }

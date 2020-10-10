@@ -19,12 +19,14 @@
 
 package net.minecraftforge.event;
 
-import com.google.common.collect.Maps;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.fml.common.eventhandler.GenericEvent;
+import net.minecraftforge.eventbus.api.GenericEvent;
 
 /**
  * Fired whenever an object with Capabilities support {currently TileEntity/Item/Entity)
@@ -38,6 +40,8 @@ public class AttachCapabilitiesEvent<T> extends GenericEvent<T>
     private final T obj;
     private final Map<ResourceLocation, ICapabilityProvider> caps = Maps.newLinkedHashMap();
     private final Map<ResourceLocation, ICapabilityProvider> view = Collections.unmodifiableMap(caps);
+    private final List<Runnable> listeners = Lists.newArrayList();
+    private final List<Runnable> listenersView = Collections.unmodifiableList(listeners);
 
     public AttachCapabilitiesEvent(Class<T> type, T obj)
     {
@@ -74,5 +78,20 @@ public class AttachCapabilitiesEvent<T> extends GenericEvent<T>
     public Map<ResourceLocation, ICapabilityProvider> getCapabilities()
     {
         return view;
+    }
+
+    /**
+     * Adds a callback that is fired when the attached object is invalidated.
+     * Such as a Entity/TileEntity being removed from world.
+     * All attached providers should invalidate all of their held capability instances.
+     */
+    public void addListener(Runnable listener)
+    {
+        this.listeners.add(listener);
+    }
+
+    public List<Runnable> getListeners()
+    {
+        return this.listenersView;
     }
 }

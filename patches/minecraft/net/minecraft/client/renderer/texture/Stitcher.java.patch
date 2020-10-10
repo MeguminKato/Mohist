@@ -1,46 +1,42 @@
---- ../src-base/minecraft/net/minecraft/client/renderer/texture/Stitcher.java
-+++ ../src-work/minecraft/net/minecraft/client/renderer/texture/Stitcher.java
-@@ -56,18 +56,24 @@
-     {
-         Stitcher.Holder[] astitcher$holder = (Stitcher.Holder[])this.field_94319_a.toArray(new Stitcher.Holder[this.field_94319_a.size()]);
-         Arrays.sort((Object[])astitcher$holder);
-+        net.minecraftforge.fml.common.ProgressManager.ProgressBar bar = net.minecraftforge.fml.common.ProgressManager.push("Texture stitching", astitcher$holder.length);
+--- a/net/minecraft/client/renderer/texture/Stitcher.java
++++ b/net/minecraft/client/renderer/texture/Stitcher.java
+@@ -14,6 +14,8 @@
  
-         for (Stitcher.Holder stitcher$holder : astitcher$holder)
-         {
-+            bar.step(stitcher$holder.func_98150_a().func_94215_i());
-             if (!this.func_94310_b(stitcher$holder))
-             {
-                 String s = String.format("Unable to fit: %s - size: %dx%d - Maybe try a lowerresolution resourcepack?", stitcher$holder.func_98150_a().func_94215_i(), stitcher$holder.func_98150_a().func_94211_a(), stitcher$holder.func_98150_a().func_94216_b());
-+                net.minecraftforge.fml.common.FMLLog.log.info(s);
-+                for (Stitcher.Holder h : astitcher$holder)
-+                    net.minecraftforge.fml.common.FMLLog.log.info("  {}", h);
-                 throw new StitcherException(stitcher$holder, s);
-             }
-         }
+ @OnlyIn(Dist.CLIENT)
+ public class Stitcher {
++   private static final org.apache.logging.log4j.Logger LOGGER = org.apache.logging.log4j.LogManager.getLogger();
++
+    private static final Comparator<Stitcher.Holder> field_217797_a = Comparator.<Stitcher.Holder, Integer>comparing((p_217793_0_) -> {
+       return -p_217793_0_.field_94201_d;
+    }).thenComparing((p_217795_0_) -> {
+@@ -54,6 +56,12 @@
  
-         this.field_94318_c = MathHelper.func_151236_b(this.field_94318_c);
-         this.field_94315_d = MathHelper.func_151236_b(this.field_94315_d);
-+        net.minecraftforge.fml.common.ProgressManager.pop(bar);
-     }
+       for(Stitcher.Holder stitcher$holder : list) {
+          if (!this.func_94310_b(stitcher$holder)) {
++            LOGGER.info(new net.minecraftforge.fml.loading.AdvancedLogMessageAdapter(sb->{
++               sb.append("Unable to fit: ").append(stitcher$holder.field_229213_a_.func_229248_a_());
++               sb.append(" - size: ").append(stitcher$holder.field_229213_a_.func_229250_b_()).append("x").append(stitcher$holder.field_229213_a_.func_229252_c_());
++               sb.append(" - Maybe try a lower resolution resourcepack?\n");
++               list.forEach(h-> sb.append("\t").append(h).append("\n"));
++            }));
+             throw new StitcherException(stitcher$holder.field_229213_a_, list.stream().map((p_229212_0_) -> {
+                return p_229212_0_.field_229213_a_;
+             }).collect(ImmutableList.toImmutableList()));
+@@ -103,7 +111,7 @@
+          boolean flag4 = flag2 && j != l;
+          boolean flag;
+          if (flag3 ^ flag4) {
+-            flag = flag3;
++            flag = !flag3 && flag1; // Forge: Fix stitcher not expanding entire height before growing width, and (potentially) growing larger then the max size.
+          } else {
+             flag = flag1 && i <= j;
+          }
+@@ -140,7 +148,7 @@
+       }
  
-     public List<TextureAtlasSprite> func_94309_g()
-@@ -148,7 +154,7 @@
+       public String toString() {
+-         return "Holder{width=" + this.field_94204_c + ", height=" + this.field_94201_d + '}';
++         return "Holder{width=" + this.field_94204_c + ", height=" + this.field_94201_d + ", name=" + this.field_229213_a_.func_229248_a_() + '}';
+       }
+    }
  
-             if (flag3 ^ flag4)
-             {
--                flag = flag3;
-+                flag = !flag3 && flag1; //Forge: Fix stitcher not expanding entire height before growing width, and {potentially} growing larger then the max size.
-             }
-             else
-             {
-@@ -240,7 +246,7 @@
- 
-             public String toString()
-             {
--                return "Holder{width=" + this.field_94204_c + ", height=" + this.field_94201_d + '}';
-+                return "Holder{width=" + this.field_94204_c + ", height=" + this.field_94201_d + ", name=" + this.field_98151_a.func_94215_i() + '}';
-\ No newline at end of file
-             }
- 
-             public int compareTo(Stitcher.Holder p_compareTo_1_)

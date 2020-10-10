@@ -1,21 +1,22 @@
---- ../src-base/minecraft/net/minecraft/util/DamageSource.java
-+++ ../src-work/minecraft/net/minecraft/util/DamageSource.java
-@@ -45,6 +45,17 @@
-     private boolean field_76378_k;
-     public String field_76373_n;
+--- a/net/minecraft/util/DamageSource.java
++++ b/net/minecraft/util/DamageSource.java
+@@ -46,6 +46,19 @@
+    private boolean field_76378_k;
+    public final String field_76373_n;
  
-+    private boolean sweep;
++   // CraftBukkit start
++   private boolean sweep;
 +
-+    public boolean isSweep() {
-+        return sweep;
-+    }
++   public boolean isSweep() {
++      return sweep;
++   }
 +
-+    public DamageSource sweep() {
-+        this.sweep = true;
-+        return this;
-+    }
++   public DamageSource sweep() {
++      this.sweep = true;
++      return this;
++   }
++   // CraftBukkit end
 +
-\ No newline at end of file
-     public static DamageSource func_76358_a(EntityLivingBase p_76358_0_)
-     {
-         return new EntityDamageSource("mob", p_76358_0_);
+    public static DamageSource func_226252_a_(LivingEntity p_226252_0_) {
+       return new EntityDamageSource("sting", p_226252_0_);
+    }

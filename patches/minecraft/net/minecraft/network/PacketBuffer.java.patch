@@ -1,53 +1,65 @@
---- ../src-base/minecraft/net/minecraft/network/PacketBuffer.java
-+++ ../src-work/minecraft/net/minecraft/network/PacketBuffer.java
-@@ -30,6 +30,7 @@
+--- a/net/minecraft/network/PacketBuffer.java
++++ b/net/minecraft/network/PacketBuffer.java
+@@ -38,8 +38,9 @@
  import net.minecraft.util.text.ITextComponent;
- import net.minecraftforge.fml.relauncher.Side;
- import net.minecraftforge.fml.relauncher.SideOnly;
-+import org.bukkit.craftbukkit.v1_12_R1.inventory.CraftItemStack;
+ import net.minecraftforge.api.distmarker.Dist;
+ import net.minecraftforge.api.distmarker.OnlyIn;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
  
- public class PacketBuffer extends ByteBuf
- {
-@@ -287,9 +288,9 @@
-             {
-                 CompressedStreamTools.func_74800_a(p_150786_1_, new ByteBufOutputStream(this));
-             }
--            catch (IOException ioexception)
-+            catch (Exception exception) // CraftBukkit - IOException -> Exception
-             {
--                throw new EncoderException(ioexception);
-+                throw new EncoderException(exception);
-             }
-         }
+-public class PacketBuffer extends ByteBuf {
++public class PacketBuffer extends ByteBuf implements net.minecraftforge.common.extensions.IForgePacketBuffer {
+    private final ByteBuf field_150794_a;
  
-@@ -323,7 +324,7 @@
+    public PacketBuffer(ByteBuf p_i45154_1_) {
+@@ -256,7 +257,7 @@
+       } else {
+          try {
+             CompressedStreamTools.func_74800_a(p_150786_1_, new ByteBufOutputStream(this));
+-         } catch (IOException ioexception) {
++         } catch (Exception ioexception) { // CraftBukkit - IOException -> Exception
+             throw new EncoderException(ioexception);
+          }
+       }
+@@ -292,7 +293,16 @@
+    }
  
-     public PacketBuffer func_150788_a(ItemStack p_150788_1_)
-     {
--        if (p_150788_1_.func_190926_b())
-+        if (p_150788_1_.func_190926_b() || p_150788_1_.func_77973_b() == null) // CraftBukkit - NPE fix itemstack.getItem()
-         {
-             this.writeShort(-1);
-         }
-@@ -336,7 +337,7 @@
+    public PacketBuffer func_150788_a(ItemStack p_150788_1_) {
+-      if (p_150788_1_.func_190926_b()) {
++      return writeItemStack(p_150788_1_, true);
++   }
++
++   /**
++    * Most ItemStack serialization is Server to Client,and doesn't need to know the FULL tag details.
++    * One exception is items from the creative menu, which must be sent from Client to Server with their full NBT.
++    * If you want to send the FULL tag set limitedTag to false
++    */
++   public PacketBuffer writeItemStack(ItemStack p_150788_1_, boolean limitedTag) {
++      if (p_150788_1_.func_190926_b() || p_150788_1_.func_77973_b() == null) { // CraftBukkit - NPE fix itemstack.getItem()
+          this.writeBoolean(false);
+       } else {
+          this.writeBoolean(true);
+@@ -300,8 +310,8 @@
+          this.func_150787_b(Item.func_150891_b(item));
+          this.writeByte(p_150788_1_.func_190916_E());
+          CompoundNBT compoundnbt = null;
+-         if (item.func_77645_m() || item.func_77651_p()) {
+-            compoundnbt = p_150788_1_.func_77978_p();
++         if (item.isDamageable(p_150788_1_) || item.func_77651_p()) {
++            compoundnbt = limitedTag ? p_150788_1_.getShareTag() : p_150788_1_.func_77978_p();
+          }
  
-             if (p_150788_1_.func_77973_b().func_77645_m() || p_150788_1_.func_77973_b().func_77651_p())
-             {
--                nbttagcompound = p_150788_1_.func_77978_p();
-+                nbttagcompound = p_150788_1_.func_77973_b().getNBTShareTag(p_150788_1_);
-             }
- 
-             this.func_150786_a(nbttagcompound);
-@@ -358,7 +359,10 @@
-             int j = this.readByte();
-             int k = this.readShort();
-             ItemStack itemstack = new ItemStack(Item.func_150899_d(i), j, k);
--            itemstack.func_77982_d(this.func_150793_b());
-+            itemstack.func_77973_b().readNBTShareTag(itemstack, this.func_150793_b());
-+            if (itemstack.func_77978_p() != null) {
-+                CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
-+            }
-\ No newline at end of file
-             return itemstack;
-         }
-     }
+          this.func_150786_a(compoundnbt);
+@@ -317,7 +327,12 @@
+          int i = this.func_150792_a();
+          int j = this.readByte();
+          ItemStack itemstack = new ItemStack(Item.func_150899_d(i), j);
+-         itemstack.func_77982_d(this.func_150793_b());
++         itemstack.readShareTag(this.func_150793_b());
++         // CraftBukkit start
++         if (itemstack.func_77978_p() != null) {
++            CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
++         }
++         // CraftBukkit end
+          return itemstack;
+       }
+    }

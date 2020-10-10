@@ -3,6 +3,8 @@ package org.bukkit.command;
 import java.util.List;
 import org.apache.commons.lang.Validate;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a {@link Command} belonging to a plugin
@@ -12,7 +14,7 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
     private CommandExecutor executor;
     private TabCompleter completer;
 
-    protected PluginCommand(String name, Plugin owner) {
+    protected PluginCommand(@NotNull String name, @NotNull Plugin owner) {
         super(name);
         this.executor = owner;
         this.owningPlugin = owner;
@@ -28,7 +30,7 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
      * @return true if the command was successful, otherwise false
      */
     @Override
-    public boolean execute(CommandSender sender, String commandLabel, String[] args) {
+    public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args) {
         boolean success = false;
 
         if (!owningPlugin.isEnabled()) {
@@ -55,30 +57,22 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
     }
 
     /**
-     * Gets the {@link CommandExecutor} associated with this command
-     *
-     * @return CommandExecutor object linked to this command
-     */
-    public CommandExecutor getExecutor() {
-        return executor;
-    }
-
-    /**
      * Sets the {@link CommandExecutor} to run when parsing this command
      *
      * @param executor New executor to run
      */
-    public void setExecutor(CommandExecutor executor) {
+    public void setExecutor(@Nullable CommandExecutor executor) {
         this.executor = executor == null ? owningPlugin : executor;
     }
 
     /**
-     * Gets the {@link TabCompleter} associated with this command.
+     * Gets the {@link CommandExecutor} associated with this command
      *
-     * @return TabCompleter object linked to this command
+     * @return CommandExecutor object linked to this command
      */
-    public TabCompleter getTabCompleter() {
-        return completer;
+    @NotNull
+    public CommandExecutor getExecutor() {
+        return executor;
     }
 
     /**
@@ -89,8 +83,18 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
      *
      * @param completer New tab completer
      */
-    public void setTabCompleter(TabCompleter completer) {
+    public void setTabCompleter(@Nullable TabCompleter completer) {
         this.completer = completer;
+    }
+
+    /**
+     * Gets the {@link TabCompleter} associated with this command.
+     *
+     * @return TabCompleter object linked to this command
+     */
+    @Nullable
+    public TabCompleter getTabCompleter() {
+        return completer;
     }
 
     /**
@@ -98,6 +102,8 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
      *
      * @return Plugin that owns this command
      */
+    @Override
+    @NotNull
     public Plugin getPlugin() {
         return owningPlugin;
     }
@@ -119,8 +125,9 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
      *     exception during the process of tab-completing.
      * @throws IllegalArgumentException if sender, alias, or args is null
      */
+    @NotNull
     @Override
-    public java.util.List<String> tabComplete(CommandSender sender, String alias, String[] args) throws CommandException, IllegalArgumentException {
+    public java.util.List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws CommandException, IllegalArgumentException {
         Validate.notNull(sender, "Sender cannot be null");
         Validate.notNull(args, "Arguments cannot be null");
         Validate.notNull(alias, "Alias cannot be null");

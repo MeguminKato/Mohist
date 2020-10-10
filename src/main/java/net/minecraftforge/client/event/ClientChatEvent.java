@@ -20,11 +20,10 @@
 package net.minecraftforge.client.event;
 
 import com.google.common.base.Strings;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.Cancelable;
+import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.event.ForgeEventFactory;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
-import net.minecraftforge.fml.common.eventhandler.Event;
+import net.minecraftforge.common.MinecraftForge;
 
 /**
  * ClientChatEvent is fired whenever the client is about to send a chat message or command to the server. <br>

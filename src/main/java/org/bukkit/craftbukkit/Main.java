@@ -4,16 +4,17 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jline.UnsupportedTerminal;
+
+import com.mohistmc.util.i18n.Message;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import org.apache.logging.log4j.LogManager;
 import org.fusesource.jansi.AnsiConsole;
-import com.mohistmc.MohistMC;
-import com.mohistmc.util.i18n.Message;
 
 public class Main {
     public static boolean useJline = true;
@@ -21,9 +22,13 @@ public class Main {
 
     public static OptionSet main(String[] args) {
         // Todo: Installation script
-        MohistMC.LOGGER = LogManager.getLogger("Mohist");
         OptionParser parser = new OptionParser() {
             {
+                acceptsAll(asList("gameDir"))
+                        .withRequiredArg()
+                        .ofType(File.class)
+                        .defaultsTo(new File(".")); //Forge: Consume this argument, we use it in the launcher,
+
                 acceptsAll(asList("?", "help"), "Show the help");
 
                 acceptsAll(asList("c", "config"), "Properties file to use")
@@ -46,6 +51,7 @@ public class Main {
                 acceptsAll(asList("W", "world-dir", "universe", "world-container"), "World container")
                         .withRequiredArg()
                         .ofType(File.class)
+                        .defaultsTo(new File("."))
                         .describedAs("Directory containing worlds");
 
                 acceptsAll(asList("w", "world", "level-name"), "World name")
@@ -111,6 +117,10 @@ public class Main {
                         .defaultsTo(new File("commands.yml"))
                         .describedAs("Yml file");
 
+                acceptsAll(asList("forceUpgrade"), "Whether to force a world upgrade");
+                acceptsAll(asList("eraseCache"), "Whether to force cache erase during world upgrade");
+                acceptsAll(asList("nogui"), "Disables the graphical console");
+
                 acceptsAll(asList("nojline"), "Disables jline and emulates the vanilla console");
 
                 acceptsAll(asList("noconsole"), "Disables the console");
@@ -118,39 +128,6 @@ public class Main {
                 acceptsAll(asList("v", "version"), "Show the CraftBukkit Version");
 
                 acceptsAll(asList("demo"), "Demo mode");
-
-                // Spigot Start
-                acceptsAll(asList("S", "spigot-settings"), "File for spigot settings")
-                        .withRequiredArg()
-                        .ofType(File.class)
-                        .defaultsTo(new File("spigot.yml"))
-                        .describedAs("Yml file");
-                // Spigot End
-
-                // Paper Start
-                acceptsAll(asList("paper", "paper-settings"), "File for paper settings")
-                        .withRequiredArg()
-                        .ofType(File.class)
-                        .defaultsTo(new File("paper.yml"))
-                        .describedAs("Yml file");
-                // Paper end
-
-                // Mohist Start
-                acceptsAll(asList("mohist", "mohist-settings"), "File for mohist settings")
-                        .withRequiredArg()
-                        .ofType(File.class)
-                        .defaultsTo(new File("mohist-config", "mohist.yml"))
-                        .describedAs("Yml file");
-                // Mohist End
-
-
-                // Paper start
-                acceptsAll(asList("server-name"), "Name of the server")
-                        .withRequiredArg()
-                        .ofType(String.class)
-                        .defaultsTo("Mohist Server")
-                        .describedAs("Name");
-                // Paper end
             }
         };
 
@@ -168,13 +145,22 @@ public class Main {
             } catch (IOException ex) {
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             }
+        } else if (options.has("v")) {
+            System.out.println(CraftServer.class.getPackage().getImplementationVersion());
         } else {
             // Do you love Java using + and ! as string based identifiers? I sure do!
             String path = new File(".").getAbsolutePath();
             if (path.contains("!") || path.contains("+")) {
-                System.err.println(Message.getString("error.start.directory"));
+                System.err.println(Message.get("error.start.directory"));
                 return null;
             }
+
+            float javaVersion = Float.parseFloat(System.getProperty("java.class.version"));
+            if (javaVersion > 59.0) {
+                System.err.println(Message.get("unsupport.java", javaVersion));
+                return null;
+            }
+
             try {
                 // This trick bypasses Maven Shade's clever rewriting of our getProperty call when using String literals
                 String jline_UnsupportedTerminal = new String(new char[]{'j', 'l', 'i', 'n', 'e', '.', 'U', 'n', 's', 'u', 'p', 'p', 'o', 'r', 't', 'e', 'd', 'T', 'e', 'r', 'm', 'i', 'n', 'a', 'l'});
@@ -186,16 +172,20 @@ public class Main {
                     System.setProperty("user.language", "en");
                     useJline = false;
                 }
-                if (Main.useJline) {
+
+                if (useJline) {
                     AnsiConsole.systemInstall();
                 } else {
-                    System.setProperty(jline.TerminalFactory.JLINE_TERMINAL, UnsupportedTerminal.class.getName());
+                    // This ensures the terminal literal will always match the jline implementation
+                    System.setProperty(jline.TerminalFactory.JLINE_TERMINAL, jline.UnsupportedTerminal.class.getName());
                 }
-
 
                 if (options.has("noconsole")) {
                     useConsole = false;
                 }
+
+                System.out.println(Message.get("load.libraries"));
+                // net.minecraft.server.Main.main(options);
             } catch (Throwable t) {
                 t.printStackTrace();
             }

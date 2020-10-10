@@ -19,19 +19,18 @@
 
 package net.minecraftforge.fluids.capability;
 
-import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.item.Items;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.INBT;
+import net.minecraft.util.Direction;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityInject;
 import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidAttributes;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidTank;
-import net.minecraftforge.fluids.IFluidTank;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
+import net.minecraftforge.fluids.capability.templates.FluidTank;
 
 public class CapabilityFluidHandler
 {
@@ -42,41 +41,34 @@ public class CapabilityFluidHandler
 
     public static void register()
     {
-        CapabilityManager.INSTANCE.register(IFluidHandler.class, new DefaultFluidHandlerStorage<>(), () -> new FluidTank(Fluid.BUCKET_VOLUME));
+        CapabilityManager.INSTANCE.register(IFluidHandler.class, new DefaultFluidHandlerStorage<>(), () -> new FluidTank(FluidAttributes.BUCKET_VOLUME));
 
-        CapabilityManager.INSTANCE.register(IFluidHandlerItem.class, new DefaultFluidHandlerStorage<>(), () -> new FluidHandlerItemStack(new ItemStack(Items.BUCKET), Fluid.BUCKET_VOLUME));
+        CapabilityManager.INSTANCE.register(IFluidHandlerItem.class, new DefaultFluidHandlerStorage<>(), () -> new FluidHandlerItemStack(new ItemStack(Items.BUCKET), FluidAttributes.BUCKET_VOLUME));
     }
 
     private static class DefaultFluidHandlerStorage<T extends IFluidHandler> implements Capability.IStorage<T> {
         @Override
-		public NBTBase writeNBT(Capability<T> capability, T instance, EnumFacing side)
-		{
-			if (!(instance instanceof IFluidTank))
-				throw new RuntimeException("IFluidHandler instance does not implement IFluidTank");
-			NBTTagCompound nbt = new NBTTagCompound();
-			IFluidTank tank = (IFluidTank) instance;
-			FluidStack fluid = tank.getFluid();
-			if (fluid != null)
-			{
-				fluid.writeToNBT(nbt);
-			}
-			else
-			{
-				nbt.setString("Empty", "");
-			}
-			nbt.setInteger("Capacity", tank.getCapacity());
-			return nbt;
-		}
+        public INBT writeNBT(Capability<T> capability, T instance, Direction side)
+        {
+            if (!(instance instanceof FluidTank))
+                throw new RuntimeException("Cannot serialize to an instance that isn't the default implementation");
+            CompoundNBT nbt = new CompoundNBT();
+            FluidTank tank = (FluidTank) instance;
+            FluidStack fluid = tank.getFluid();
+            fluid.writeToNBT(nbt);
+            nbt.putInt("Capacity", tank.getCapacity());
+            return nbt;
+        }
 
         @Override
-		public void readNBT(Capability<T> capability, T instance, EnumFacing side, NBTBase nbt)
-		{
-			if (!(instance instanceof FluidTank))
-				throw new RuntimeException("IFluidHandler instance is not instance of FluidTank");
-			NBTTagCompound tags = (NBTTagCompound) nbt;
-			FluidTank tank = (FluidTank) instance;
-			tank.setCapacity(tags.getInteger("Capacity"));
-			tank.readFromNBT(tags);
-		}
+        public void readNBT(Capability<T> capability, T instance, Direction side, INBT nbt)
+        {
+            if (!(instance instanceof FluidTank))
+                throw new RuntimeException("Cannot deserialize to an instance that isn't the default implementation");
+            CompoundNBT tags = (CompoundNBT) nbt;
+            FluidTank tank = (FluidTank) instance;
+            tank.setCapacity(tags.getInt("Capacity"));
+            tank.readFromNBT(tags);
+        }
     }
 }

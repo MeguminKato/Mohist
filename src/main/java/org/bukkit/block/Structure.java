@@ -5,18 +5,20 @@ import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.block.structure.UsageMode;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.BlockVector;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a structure block that can save and load blocks from a file. They
  * can only be used by OPs, and are not obtainable in survival.
  */
-public interface Structure extends BlockState {
+public interface Structure extends TileState {
 
     /**
      * The name of this structure.
      *
      * @return structure name
      */
+    @NotNull
     String getStructureName();
 
     /**
@@ -27,14 +29,22 @@ public interface Structure extends BlockState {
      *
      * @param name the case-sensitive name of this structure
      */
-    void setStructureName(String name);
+    void setStructureName(@NotNull String name);
 
     /**
      * Get the name of who created this structure.
      *
      * @return the name of whoever created this structure.
      */
+    @NotNull
     String getAuthor();
+
+    /**
+     * Set the name of whoever created this structure.
+     *
+     * @param author whoever created this structure (not empty)
+     */
+    void setAuthor(@NotNull String author);
 
     /**
      * Set the name of whoever created this structure using a
@@ -42,102 +52,93 @@ public interface Structure extends BlockState {
      *
      * @param livingEntity the entity who created this structure
      */
-    void setAuthor(LivingEntity livingEntity);
-
-    /**
-     * Set the name of whoever created this structure.
-     *
-     * @param author whoever created this structure
-     */
-    void setAuthor(String author);
+    void setAuthor(@NotNull LivingEntity livingEntity);
 
     /**
      * The relative position of the structure outline based on the position of
-     * the structure block. Maximum allowed distance is 32 blocks in any
+     * the structure block. Maximum allowed distance is 48 blocks in any
      * direction.
      *
      * @return a Location which contains the relative distance this structure is
      * from the structure block.
      */
+    @NotNull
     BlockVector getRelativePosition();
 
     /**
      * Set the relative position from the structure block. Maximum allowed
-     * distance is 32 blocks in any direction.
+     * distance is 48 blocks in any direction.
      *
      * @param vector the {@link BlockVector} containing the relative origin
      * coordinates of this structure.
      */
-    void setRelativePosition(BlockVector vector);
+    void setRelativePosition(@NotNull BlockVector vector);
 
     /**
      * The distance to the opposite corner of this structure. The maximum
-     * structure size is 32x32x32. When a structure has successfully been
+     * structure size is 48x48x48. When a structure has successfully been
      * calculated (i.e. it is within the maximum allowed distance) a white
      * border surrounds the structure.
      *
      * @return a {@link BlockVector} which contains the total size of the
      * structure.
      */
+    @NotNull
     BlockVector getStructureSize();
 
     /**
      * Set the maximum size of this structure from the origin point. Maximum
-     * allowed size is 32x32x32.
+     * allowed size is 48x48x48.
      *
      * @param vector the {@link BlockVector} containing the size of this
      * structure, based off of the origin coordinates.
      */
-    void setStructureSize(BlockVector vector);
-
-    /**
-     * How this structure is mirrored.
-     *
-     * @return the current mirroring method
-     */
-    Mirror getMirror();
+    void setStructureSize(@NotNull BlockVector vector);
 
     /**
      * Sets the mirroring of the structure.
      *
      * @param mirror the new mirroring method
      */
-    void setMirror(Mirror mirror);
+    void setMirror(@NotNull Mirror mirror);
 
     /**
-     * Get how this structure is rotated.
+     * How this structure is mirrored.
      *
-     * @return the new rotation
+     * @return the current mirroring method
      */
-    StructureRotation getRotation();
+    @NotNull
+    Mirror getMirror();
 
     /**
      * Set how this structure is rotated.
      *
      * @param rotation the new rotation
      */
-    void setRotation(StructureRotation rotation);
+    void setRotation(@NotNull StructureRotation rotation);
 
     /**
-     * Get the {@link UsageMode} of this structure block.
+     * Get how this structure is rotated.
      *
-     * @return the mode this block is currently in.
+     * @return the new rotation
      */
-    UsageMode getUsageMode();
+    @NotNull
+    StructureRotation getRotation();
 
     /**
      * Set the {@link UsageMode} of this structure block.
      *
      * @param mode the new mode to set.
      */
-    void setUsageMode(UsageMode mode);
+    void setUsageMode(@NotNull UsageMode mode);
 
     /**
-     * Get if this structure block should ignore entities.
+     * Get the {@link UsageMode} of this structure block.
      *
-     * @return true if the appropriate {@link UsageMode} should ignore entities.
+     * @return the mode this block is currently in.
      */
-    boolean isIgnoreEntities();
+    @NotNull
+    UsageMode getUsageMode();
 
     /**
      * While in {@link UsageMode#SAVE} mode, this will ignore any entities when
@@ -151,11 +152,11 @@ public interface Structure extends BlockState {
     void setIgnoreEntities(boolean ignoreEntities);
 
     /**
-     * Check if this structure block is currently showing all air blocks
+     * Get if this structure block should ignore entities.
      *
-     * @return true if the structure block is showing all air blocks
+     * @return true if the appropriate {@link UsageMode} should ignore entities.
      */
-    boolean isShowAir();
+    boolean isIgnoreEntities();
 
     /**
      * Set if the structure outline should show air blocks.
@@ -165,11 +166,11 @@ public interface Structure extends BlockState {
     void setShowAir(boolean showAir);
 
     /**
-     * Get if this structure block is currently showing the bounding box.
+     * Check if this structure block is currently showing all air blocks
      *
-     * @return true if the bounding box is shown
+     * @return true if the structure block is showing all air blocks
      */
-    boolean isBoundingBoxVisible();
+    boolean isShowAir();
 
     /**
      * Set if this structure box should show the bounding box.
@@ -179,11 +180,11 @@ public interface Structure extends BlockState {
     void setBoundingBoxVisible(boolean showBoundingBox);
 
     /**
-     * Get the integrity of this structure.
+     * Get if this structure block is currently showing the bounding box.
      *
-     * @return the integrity of this structure
+     * @return true if the bounding box is shown
      */
-    float getIntegrity();
+    boolean isBoundingBoxVisible();
 
     /**
      * Set the integrity of the structure. Integrity must be between 0.0 and 1.0
@@ -196,12 +197,11 @@ public interface Structure extends BlockState {
     void setIntegrity(float integrity);
 
     /**
-     * The seed used to determine how many blocks are removed upon loading of
-     * this structure.
+     * Get the integrity of this structure.
      *
-     * @return the seed used
+     * @return the integrity of this structure
      */
-    long getSeed();
+    float getIntegrity();
 
     /**
      * The seed used to determine which blocks will be removed upon loading.
@@ -213,14 +213,12 @@ public interface Structure extends BlockState {
     void setSeed(long seed);
 
     /**
-     * Get the metadata function this structure block will perform when
-     * activated. Consult the
-     * <a href="https://minecraft.gamepedia.com/Structure_Block#Data">Minecraft
-     * Wiki</a> for more information.
+     * The seed used to determine how many blocks are removed upon loading of
+     * this structure.
      *
-     * @return the function that will be performed when this block is activated
+     * @return the seed used
      */
-    String getMetadata();
+    long getSeed();
 
     /**
      * Only applicable while in {@link UsageMode#DATA}. Metadata are specific
@@ -230,5 +228,16 @@ public interface Structure extends BlockState {
      *
      * @param metadata the function to perform on the selected location
      */
-    void setMetadata(String metadata);
+    void setMetadata(@NotNull String metadata);
+
+    /**
+     * Get the metadata function this structure block will perform when
+     * activated. Consult the
+     * <a href="https://minecraft.gamepedia.com/Structure_Block#Data">Minecraft
+     * Wiki</a> for more information.
+     *
+     * @return the function that will be performed when this block is activated
+     */
+    @NotNull
+    String getMetadata();
 }

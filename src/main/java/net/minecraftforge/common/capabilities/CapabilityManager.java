@@ -19,55 +19,39 @@
 
 package net.minecraftforge.common.capabilities;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.function.Function;
-import net.minecraftforge.common.util.EnumHelper;
-import net.minecraftforge.fml.common.FMLLog;
-import net.minecraftforge.fml.common.discovery.ASMDataTable;
+
+import net.minecraftforge.forgespi.language.ModFileScanData;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.Type;
+
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static net.minecraftforge.fml.Logging.CAPABILITIES;
 
 public enum CapabilityManager
 {
     INSTANCE;
+    private static final Logger LOGGER = LogManager.getLogger();
+    private static final Type CAP_INJECT = Type.getType(CapabilityInject.class);
 
     /**
      * Registers a capability to be consumed by others.
      * APIs who define the capability should call this.
      * To retrieve the Capability instance, use the @CapabilityInject annotation.
-     *
-     * @param type The Interface to be registered
-     * @param storage A default implementation of the storage handler.
-     * @param implementation A default implementation of the interface.
-     * @deprecated Use the overload that takes a factory instead of a class.
-     *  You can easily do this by passing a constructor reference
-     *  (MyImpl::new instead of MyImpl.class). TODO remove in 1.13.
-     */
-    @Deprecated
-    public <T> void register(Class<T> type, Capability.IStorage<T> storage, final Class<? extends T> implementation)
-    {
-        Preconditions.checkArgument(implementation != null, "Attempted to register a capability with no default implementation");
-        register(type, storage, () ->
-        {
-            try {
-                return implementation.newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    /**
-     * Registers a capability to be consumed by others.
-     * APIs who define the capability should call this.
-     * To retrieve the Capability instance, use the @CapabilityInject annotation.
+     * This method is safe to call during parallel mod loading.
      *
      * @param type The Interface to be registered
      * @param storage A default implementation of the storage handler.
@@ -75,103 +59,104 @@ public enum CapabilityManager
      */
     public <T> void register(Class<T> type, Capability.IStorage<T> storage, Callable<? extends T> factory)
     {
-        Preconditions.checkArgument(type    != null, "Attempted to register a capability with invalid type");
-        Preconditions.checkArgument(storage != null, "Attempted to register a capability with no storage implementation");
-        Preconditions.checkArgument(factory != null, "Attempted to register a capability with no default implementation factory");
+        Objects.requireNonNull(type,"Attempted to register a capability with invalid type");
+        Objects.requireNonNull(storage,"Attempted to register a capability with no storage implementation");
+        Objects.requireNonNull(factory,"Attempted to register a capability with no default implementation factory");
         String realName = type.getName().intern();
-        Preconditions.checkState(!providers.containsKey(realName), "Can not register a capability implementation multiple times: %s", realName);
+        Capability<T> cap;
 
-        Capability<T> cap = new Capability<T>(realName, storage, factory);
-        providers.put(realName, cap);
-
-        List<Function<Capability<?>, Object>> list = callbacks.get(realName);
-        if (list != null)
+        synchronized (providers)
         {
-            for (Function<Capability<?>, Object> func : list)
-            {
-                func.apply(cap);
+            if (providers.containsKey(realName)) {
+                LOGGER.error(CAPABILITIES, "Cannot register capability implementation multiple times : {}", realName);
+                throw new IllegalArgumentException("Cannot register a capability implementation multiple times : "+ realName);
             }
+
+            cap = new Capability<>(realName, storage, factory);
+            providers.put(realName, cap);
         }
+
+        callbacks.getOrDefault(realName, Collections.emptyList()).forEach(func -> func.apply(cap));
     }
 
     // INTERNAL
-    private IdentityHashMap<String, Capability<?>> providers = Maps.newIdentityHashMap();
-    private IdentityHashMap<String, List<Function<Capability<?>, Object>>> callbacks = Maps.newIdentityHashMap();
-    public void injectCapabilities(ASMDataTable data)
+    private final IdentityHashMap<String, Capability<?>> providers = new IdentityHashMap<>();
+    private volatile IdentityHashMap<String, List<Function<Capability<?>, Object>>> callbacks;
+    public void injectCapabilities(List<ModFileScanData> data)
     {
-        for (ASMDataTable.ASMData entry : data.getAll(CapabilityInject.class.getName()))
+        final List<ModFileScanData.AnnotationData> capabilities = data.stream()
+            .map(ModFileScanData::getAnnotations)
+            .flatMap(Collection::stream)
+            .filter(a -> CAP_INJECT.equals(a.getAnnotationType()))
+            .collect(Collectors.toList());
+        final IdentityHashMap<String, List<Function<Capability<?>, Object>>> m = new IdentityHashMap<>();
+        capabilities.forEach(entry -> attachCapabilityToMethod(m, entry));
+        callbacks = m;
+    }
+
+    private static void attachCapabilityToMethod(Map<String, List<Function<Capability<?>, Object>>> cbs, ModFileScanData.AnnotationData entry)
+    {
+        final String targetClass = entry.getClassType().getClassName();
+        final String targetName = entry.getMemberName();
+        Type type = (Type)entry.getAnnotationData().get("value");
+        if (type == null)
         {
-            final String targetClass = entry.getClassName();
-            final String targetName = entry.getObjectName();
-            Type type = (Type)entry.getAnnotationInfo().get("value");
-            if (type == null)
-            {
-                FMLLog.log.warn("Unable to inject capability at {}.{} (Invalid Annotation)", targetClass, targetName);
-                continue;
-            }
-            final String capabilityName = type.getInternalName().replace('/', '.').intern();
+            LOGGER.warn(CAPABILITIES,"Unable to inject capability at {}.{} (Invalid Annotation)", targetClass, targetName);
+            return;
+        }
+        final String capabilityName = type.getInternalName().replace('/', '.').intern();
 
-            List<Function<Capability<?>, Object>> list = callbacks.computeIfAbsent(capabilityName, k -> Lists.newArrayList());
+        List<Function<Capability<?>, Object>> list = cbs.computeIfAbsent(capabilityName, k -> new ArrayList<>());
 
-            if (entry.getObjectName().indexOf('(') > 0)
-            {
-                list.add(new Function<Capability<?>, Object>()
+        if (entry.getMemberName().indexOf('(') > 0)
+        {
+            list.add(input -> {
+                try
                 {
-                    @Override
-                    public Object apply(Capability<?> input)
+                    for (Method mtd : Class.forName(targetClass).getDeclaredMethods())
                     {
-                        try
+                        if (targetName.equals(mtd.getName() + Type.getMethodDescriptor(mtd)))
                         {
-                            for (Method mtd : Class.forName(targetClass).getDeclaredMethods())
+                            if ((mtd.getModifiers() & Modifier.STATIC) != Modifier.STATIC)
                             {
-                                if (targetName.equals(mtd.getName() + Type.getMethodDescriptor(mtd)))
-                                {
-                                    if ((mtd.getModifiers() & Modifier.STATIC) != Modifier.STATIC)
-                                    {
-                                        FMLLog.log.warn("Unable to inject capability {} at {}.{} (Non-Static)", capabilityName, targetClass, targetName);
-                                        return null;
-                                    }
-
-                                    mtd.setAccessible(true);
-                                    mtd.invoke(null, input);
-                                    return null;
-                                }
-                            }
-                            FMLLog.log.warn("Unable to inject capability {} at {}.{} (Method Not Found)", capabilityName, targetClass, targetName);
-                        }
-                        catch (Exception e)
-                        {
-                            FMLLog.log.warn("Unable to inject capability {} at {}.{}", capabilityName, targetClass, targetName, e);
-                        }
-                        return null;
-                    }
-                });
-            }
-            else
-            {
-                list.add(new Function<Capability<?>, Object>()
-                {
-                    @Override
-                    public Object apply(Capability<?> input)
-                    {
-                        try
-                        {
-                            Field field = Class.forName(targetClass).getDeclaredField(targetName);
-                            if ((field.getModifiers() & Modifier.STATIC) != Modifier.STATIC)
-                            {
-                                FMLLog.log.warn("Unable to inject capability {} at {}.{} (Non-Static)", capabilityName, targetClass, targetName);
+                                LOGGER.warn(CAPABILITIES,"Unable to inject capability {} at {}.{} (Non-Static)", capabilityName, targetClass, targetName);
                                 return null;
                             }
-                            EnumHelper.setFailsafeFieldValue(field, null, input);
+
+                            mtd.setAccessible(true);
+                            mtd.invoke(null, input);
+                            return null;
                         }
-                        catch (Exception e)
-                        {
-                            FMLLog.log.warn("Unable to inject capability {} at {}.{}", capabilityName, targetClass, targetName, e);
-                        }
+                    }
+                    LOGGER.warn(CAPABILITIES,"Unable to inject capability {} at {}.{} (Method Not Found)", capabilityName, targetClass, targetName);
+                }
+                catch (Exception e)
+                {
+                    LOGGER.warn(CAPABILITIES,"Unable to inject capability {} at {}.{}", capabilityName, targetClass, targetName, e);
+                }
+                return null;
+            });
+        }
+        else
+        {
+            list.add(input -> {
+                try
+                {
+                    Field field = Class.forName(targetClass).getDeclaredField(targetName);
+                    if ((field.getModifiers() & Modifier.STATIC) != Modifier.STATIC)
+                    {
+                        LOGGER.warn(CAPABILITIES,"Unable to inject capability {} at {}.{} (Non-Static)", capabilityName, targetClass, targetName);
                         return null;
                     }
-                });
-            }
+                    field.setAccessible(true);
+                    field.set(null, input);
+                }
+                catch (Exception e)
+                {
+                    LOGGER.warn(CAPABILITIES,"Unable to inject capability {} at {}.{}", capabilityName, targetClass, targetName, e);
+                }
+                return null;
+            });
         }
     }
 }

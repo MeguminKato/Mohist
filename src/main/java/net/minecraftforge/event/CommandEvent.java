@@ -19,22 +19,18 @@
 
 package net.minecraftforge.event;
 
-import net.minecraft.command.CommandHandler;
-import net.minecraft.command.ICommand;
-import net.minecraft.command.ICommandSender;
-import net.minecraftforge.client.ClientCommandHandler;
+import com.mojang.brigadier.ParseResults;
+import net.minecraft.command.CommandSource;
+import net.minecraft.command.Commands;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
-import net.minecraftforge.fml.common.eventhandler.Event;
+import net.minecraftforge.eventbus.api.Cancelable;
+import net.minecraftforge.eventbus.api.Event;
 
 /**
- * CommandEvent is fired whenever a command is scheduled to be executed. 
- * This event is fired during the invocation of {@link CommandHandler#executeCommand(ICommandSender, String)}
- * and {@link ClientCommandHandler#executeCommand(ICommandSender, String)}. <br>
+ * CommandEvent is fired after a command is parsed, but before it is executed.
+ * This event is fired during the invocation of {@link Commands#handleCommand(CommandSource, String)}. <br>
  * <br>
- * {@link #command} contains the instance of ICommand which is representative of the currently executing command.<br>
- * {@link #sender} contains the instance of ICommandSender for the given command sender.<br>
- * {@link #parameters} contains the arguments passed for the command execution.<br>
+ * {@link #parse} contains the instance of {@link ParseResults} for the parsed command.<br>
  * {@link #exception} begins null, but can be populated with an exception to be thrown within the command.<br>
  * <br>
  * This event is {@link Cancelable}. <br>
@@ -47,23 +43,16 @@ import net.minecraftforge.fml.common.eventhandler.Event;
 @Cancelable
 public class CommandEvent extends Event
 {
-
-    private final ICommand command;
-    private final ICommandSender sender;
-    private String[] parameters;
+    private ParseResults<CommandSource> parse;
     private Throwable exception;
 
-    public CommandEvent(ICommand command, ICommandSender sender, String[] parameters)
+    public CommandEvent(ParseResults<CommandSource> parse)
     {
-        this.command = command;
-        this.sender = sender;
-        this.setParameters(parameters);
+        this.parse = parse;
     }
 
-    public ICommand getCommand() { return command; }
-    public ICommandSender getSender() { return sender; }
-    public String[] getParameters() { return parameters; }
-    public void setParameters(String[] parameters) { this.parameters = parameters; }
+    public ParseResults<CommandSource> getParseResults() { return parse; }
+    public void setParseResults(ParseResults<CommandSource> parse) { this.parse = parse; }
     public Throwable getException() { return exception; }
     public void setException(Throwable exception) { this.exception = exception; }
 }

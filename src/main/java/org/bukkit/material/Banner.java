@@ -3,10 +3,15 @@ package org.bukkit.material;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 
+/**
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
+ */
+@Deprecated
 public class Banner extends MaterialData implements Attachable {
 
     public Banner() {
-        super(Material.BANNER);
+        super(Material.LEGACY_BANNER);
     }
 
     public Banner(Material type) {
@@ -14,36 +19,20 @@ public class Banner extends MaterialData implements Attachable {
     }
 
     /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-    public Banner(int type) {
-        super(type);
-    }
-
-    /**
-     *
      * @param type the type
      * @param data the raw data value
      * @deprecated Magic value
      */
+    @Deprecated
     public Banner(Material type, byte data) {
         super(type, data);
     }
 
-    /**     *
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-    public Banner(int type, byte data) {
-        super(type, data);
-    }
-
     public boolean isWallBanner() {
-        return getItemType() == Material.WALL_BANNER;
+        return getItemType() == Material.LEGACY_WALL_BANNER;
     }
 
+    @Override
     public BlockFace getAttachedFace() {
         if (isWallBanner()) {
             byte data = getData();
@@ -68,6 +57,7 @@ public class Banner extends MaterialData implements Attachable {
         }
     }
 
+    @Override
     public BlockFace getFacing() {
         byte data = getData();
 
@@ -128,6 +118,7 @@ public class Banner extends MaterialData implements Attachable {
         }
     }
 
+    @Override
     public void setFacingDirection(BlockFace face) {
         byte data;
 

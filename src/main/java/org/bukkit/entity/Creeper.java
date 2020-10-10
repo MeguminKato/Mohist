@@ -20,15 +20,6 @@ public interface Creeper extends Monster {
     public void setPowered(boolean value);
 
     /**
-     * Get the maximum fuse ticks for this Creeper, where the maximum ticks
-     * is the amount of time in which a creeper is allowed to be in the
-     * primed state before exploding.
-     *
-     * @return the maximum fuse ticks
-     */
-    public int getMaxFuseTicks();
-
-    /**
      * Set the maximum fuse ticks for this Creeper, where the maximum ticks
      * is the amount of time in which a creeper is allowed to be in the
      * primed state before exploding.
@@ -38,11 +29,13 @@ public interface Creeper extends Monster {
     public void setMaxFuseTicks(int ticks);
 
     /**
-     * Get the explosion radius in which this Creeper's explosion will affect.
+     * Get the maximum fuse ticks for this Creeper, where the maximum ticks
+     * is the amount of time in which a creeper is allowed to be in the
+     * primed state before exploding.
      *
-     * @return the explosion radius
+     * @return the maximum fuse ticks
      */
-    public int getExplosionRadius();
+    public int getMaxFuseTicks();
 
     /**
      * Set the explosion radius in which this Creeper's explosion will affect.
@@ -50,4 +43,32 @@ public interface Creeper extends Monster {
      * @param radius the new explosion radius
      */
     public void setExplosionRadius(int radius);
+
+    /**
+     * Get the explosion radius in which this Creeper's explosion will affect.
+     *
+     * @return the explosion radius
+     */
+    public int getExplosionRadius();
+
+    /**
+     * Makes this Creeper explode instantly.
+     *
+     * The resulting explosion can be cancelled by an
+     * {@link org.bukkit.event.entity.ExplosionPrimeEvent} and obeys the mob
+     * griefing gamerule.
+     */
+    public void explode();
+
+    /**
+     * Ignites this Creeper, beginning its fuse.
+     *
+     * The amount of time the Creeper takes to explode will depend on what
+     * {@link #setMaxFuseTicks} is set as.
+     *
+     * The resulting explosion can be cancelled by an
+     * {@link org.bukkit.event.entity.ExplosionPrimeEvent} and obeys the mob
+     * griefing gamerule.
+     */
+    public void ignite();
 }

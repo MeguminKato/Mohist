@@ -1,0 +1,118 @@
+--- a/net/minecraft/world/storage/SaveFormat.java
++++ b/net/minecraft/world/storage/SaveFormat.java
+@@ -49,6 +49,7 @@
+ import net.minecraft.util.registry.Registry;
+ import net.minecraft.util.registry.RegistryLookupCodec;
+ import net.minecraft.util.text.TranslationTextComponent;
++import net.minecraft.world.Dimension;
+ import net.minecraft.world.DimensionType;
+ import net.minecraft.world.World;
+ import net.minecraft.world.WorldSettings;
+@@ -182,6 +183,10 @@
+    }
+ 
+    private static BiFunction<File, DataFixer, ServerWorldInfo> func_237270_b_(DynamicOps<INBT> p_237270_0_, DatapackCodec p_237270_1_) {
++       return getReader(p_237270_0_, p_237270_1_, null);
++   }
++
++   private static BiFunction<File, DataFixer, ServerWorldInfo> getReader(DynamicOps<INBT> p_237270_0_, DatapackCodec p_237270_1_, @Nullable LevelSave levelSave) {
+       return (p_242976_2_, p_242976_3_) -> {
+          try {
+             CompoundNBT compoundnbt = CompressedStreamTools.func_244263_a(p_242976_2_);
+@@ -193,7 +198,10 @@
+             Pair<DimensionGeneratorSettings, Lifecycle> pair = func_237259_a_(dynamic, p_242976_3_, i);
+             VersionData versiondata = VersionData.func_237324_a_(dynamic);
+             WorldSettings worldsettings = WorldSettings.func_234951_a_(dynamic, p_237270_1_);
+-            return ServerWorldInfo.func_237369_a_(dynamic, p_242976_3_, i, compoundnbt2, worldsettings, versiondata, pair.getFirst(), pair.getSecond());
++            ServerWorldInfo info = ServerWorldInfo.func_237369_a_(dynamic, p_242976_3_, i, compoundnbt2, worldsettings, versiondata, pair.getFirst(), pair.getSecond());
++            if (levelSave != null)
++                net.minecraftforge.fml.WorldPersistenceHooks.handleWorldDataLoad(levelSave, info, compoundnbt);
++            return info;
+          } catch (Exception exception) {
+             field_215785_a.error("Exception reading {}", p_242976_2_, exception);
+             return null;
+@@ -255,16 +263,27 @@
+    }
+ 
+    public SaveFormat.LevelSave func_237274_c_(String p_237274_1_) throws IOException {
+-      return new SaveFormat.LevelSave(p_237274_1_);
++      return new SaveFormat.LevelSave(p_237274_1_, null);
+    }
+ 
++   // CraftBukkit start
++   public SaveFormat.LevelSave func_237274_c_(String p_237274_1_, RegistryKey<Dimension> dimensionType) throws IOException {
++      return new SaveFormat.LevelSave(p_237274_1_, dimensionType);
++      // CraftBukkit end
++   }
++
+    public class LevelSave implements AutoCloseable {
+       private final SessionLockManager field_237278_b_;
+-      private final Path field_237279_c_;
++      public final Path field_237279_c_; // private->public CraftBukkit
+       private final String field_237280_d_;
+       private final Map<FolderName, Path> field_237281_e_ = Maps.newHashMap();
+ 
+-      public LevelSave(String p_i232152_2_) throws IOException {
++      // CraftBukkit start
++      private final RegistryKey<Dimension> dimensionType;
++
++      public LevelSave(String p_i232152_2_, RegistryKey<Dimension> dimensionType) throws IOException {
++         this.dimensionType = dimensionType;
++         // CraftBukkit end
+          this.field_237280_d_ = p_i232152_2_;
+          this.field_237279_c_ = SaveFormat.this.field_215786_c.resolve(p_i232152_2_);
+          this.field_237278_b_ = SessionLockManager.func_232998_a_(this.field_237279_c_);
+@@ -281,9 +300,23 @@
+       }
+ 
+       public File func_237291_a_(RegistryKey<World> p_237291_1_) {
+-         return DimensionType.func_236031_a_(p_237291_1_, this.field_237279_c_.toFile());
++         // CraftBukkit start
++         return this.getFolder(this.field_237279_c_.toFile());
+       }
+ 
++      private File getFolder(File file) {
++         if (dimensionType == Dimension.field_236053_b_) {
++            return file;
++         } else if (dimensionType == Dimension.field_236054_c_) {
++            return new File(file, "DIM-1");
++         } else if (dimensionType == Dimension.field_236055_d_) {
++            return new File(file, "DIM1");
++         } else {
++            throw new IllegalArgumentException("Unknwon dimension " + this.dimensionType);
++         }
++      }
++      // CraftBukkit end
++
+       private void func_237301_i_() {
+          if (!this.field_237278_b_.func_232997_a_()) {
+             throw new IllegalStateException("Lock is no longer valid");
+@@ -314,7 +347,7 @@
+       @Nullable
+       public IServerConfiguration func_237284_a_(DynamicOps<INBT> p_237284_1_, DatapackCodec p_237284_2_) {
+          this.func_237301_i_();
+-         return SaveFormat.this.func_237266_a_(this.field_237279_c_.toFile(), SaveFormat.func_237270_b_(p_237284_1_, p_237284_2_));
++         return SaveFormat.this.func_237266_a_(this.field_237279_c_.toFile(), SaveFormat.getReader(p_237284_1_, p_237284_2_, this));
+       }
+ 
+       @Nullable
+@@ -335,6 +368,8 @@
+          CompoundNBT compoundnbt1 = new CompoundNBT();
+          compoundnbt1.func_218657_a("Data", compoundnbt);
+ 
++         net.minecraftforge.fml.WorldPersistenceHooks.handleWorldDataSave(this, p_237288_2_, compoundnbt1);
++
+          try {
+             File file2 = File.createTempFile("level", ".dat", file1);
+             CompressedStreamTools.func_244264_a(compoundnbt1, file2);
+@@ -352,6 +387,10 @@
+          return this.field_237279_c_.resolve("icon.png").toFile();
+       }
+ 
++      public Path getWorldDir() {
++          return field_237279_c_;
++      }
++
+       @OnlyIn(Dist.CLIENT)
+       public void func_237299_g_() throws IOException {
+          this.func_237301_i_();

@@ -1,14 +1,12 @@
---- ../src-base/minecraft/net/minecraft/client/renderer/ItemModelMesher.java
-+++ ../src-work/minecraft/net/minecraft/client/renderer/ItemModelMesher.java
-@@ -33,7 +33,9 @@
+--- a/net/minecraft/client/renderer/ItemModelMesher.java
++++ b/net/minecraft/client/renderer/ItemModelMesher.java
+@@ -31,7 +31,8 @@
  
-     public TextureAtlasSprite func_178087_a(Item p_178087_1_, int p_178087_2_)
-     {
--        return this.func_178089_a(new ItemStack(p_178087_1_, 1, p_178087_2_)).func_177554_e();
-+        ItemStack stack = new ItemStack(p_178087_1_, 1, p_178087_2_);
-+        IBakedModel model = this.func_178089_a(stack);
-+        return model.func_188617_f().handleItemState(model, stack, null, null).func_177554_e();
-\ No newline at end of file
-     }
+    public TextureAtlasSprite func_199309_a(ItemStack p_199309_1_) {
+       IBakedModel ibakedmodel = this.func_178089_a(p_199309_1_);
+-      return ibakedmodel == this.field_178090_d.func_174951_a() && p_199309_1_.func_77973_b() instanceof BlockItem ? this.field_178090_d.func_174954_c().func_178122_a(((BlockItem)p_199309_1_.func_77973_b()).func_179223_d().func_176223_P()) : ibakedmodel.func_177554_e();
++      // FORGE: Make sure to call the item overrides
++      return ibakedmodel == this.field_178090_d.func_174951_a() && p_199309_1_.func_77973_b() instanceof BlockItem ? this.field_178090_d.func_174954_c().func_178122_a(((BlockItem)p_199309_1_.func_77973_b()).func_179223_d().func_176223_P()) : ibakedmodel.func_188617_f().func_239290_a_(ibakedmodel, p_199309_1_, null, null).getParticleTexture(net.minecraftforge.client.model.data.EmptyModelData.INSTANCE);
+    }
  
-     public IBakedModel func_178089_a(ItemStack p_178089_1_)
+    public IBakedModel func_178089_a(ItemStack p_178089_1_) {

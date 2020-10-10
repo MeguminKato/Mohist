@@ -2,6 +2,7 @@ package org.bukkit.event.server;
 
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.RegisteredServiceProvider;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is called when a service is registered.
@@ -12,16 +13,18 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 public class ServiceRegisterEvent extends ServiceEvent {
     private static final HandlerList handlers = new HandlerList();
 
-    public ServiceRegisterEvent(RegisteredServiceProvider<?> registeredProvider) {
+    public ServiceRegisterEvent(@NotNull RegisteredServiceProvider<?> registeredProvider) {
         super(registeredProvider);
     }
 
-    public static HandlerList getHandlerList() {
+    @NotNull
+    @Override
+    public HandlerList getHandlers() {
         return handlers;
     }
 
-    @Override
-    public HandlerList getHandlers() {
+    @NotNull
+    public static HandlerList getHandlerList() {
         return handlers;
     }
 }

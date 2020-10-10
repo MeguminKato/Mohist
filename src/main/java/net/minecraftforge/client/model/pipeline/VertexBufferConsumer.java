@@ -19,83 +19,78 @@
 
 package net.minecraftforge.client.model.pipeline;
 
-import net.minecraft.client.renderer.BufferBuilder;
+import com.mojang.blaze3d.vertex.IVertexBuilder;
+
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.renderer.vertex.VertexFormat;
-import net.minecraft.client.renderer.vertex.VertexFormatElement.EnumUsage;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.Direction;
 
 /**
  * Assumes VertexFormatElement is present in the BufferBuilder's vertex format.
  */
 public class VertexBufferConsumer implements IVertexConsumer
 {
-    private static final float[] dummyColor = new float[]{ 1, 1, 1, 1 };
-
-    private BufferBuilder renderer;
-    private int[] quadData;
-    private int v = 0;
-    private BlockPos offset = BlockPos.ORIGIN;
+    private IVertexBuilder renderer;
 
     public VertexBufferConsumer() {}
 
-    public VertexBufferConsumer(BufferBuilder buffer)
+    public VertexBufferConsumer(IVertexBuilder buffer)
     {
         setBuffer(buffer);
     }
 
     @Override
-    public VertexFormat getVertexFormat()
+    public final VertexFormat getVertexFormat()
     {
-        return renderer.getVertexFormat();
+        return DefaultVertexFormats.BLOCK;
     }
 
     @Override
     public void put(int e, float... data)
     {
-        VertexFormat format = getVertexFormat();
-        if(renderer.isColorDisabled() && format.getElement(e).getUsage() == EnumUsage.COLOR)
+        final float d0 = data.length <= 0 ? 0 : data[0];
+        final float d1 = data.length <= 1 ? 0 : data[1];
+        final float d2 = data.length <= 2 ? 0 : data[2];
+        final float d3 = data.length <= 3 ? 0 : data[3];
+
+        switch (e)
         {
-            data = dummyColor;
+        case 0: // POSITION_3F
+            renderer.pos(d0, d1, d2);
+            break;
+        case 4: // NORMAL_3B
+            renderer.normal(d0, d1, d2);
+            break;
+        case 1: // COLOR_4UB
+            renderer.color(d0, d1, d2, d3);
+            break;
+        case 2: // TEX_2F
+            renderer.tex(d0, d1);
+            break;
+        case 3: // TEX_2SB
+            renderer.lightmap((int) (d0 * 0xF0), (int) (d1 * 0xF0));
+            break;
+        case 5: // PADDING_1B
+            break;
+        default:
+            throw new IllegalArgumentException("Vertex element out of bounds: " + e);
         }
-        LightUtil.pack(data, quadData, format, v, e);
-        if(e == format.getElementCount() - 1)
+        if(e == 5)
         {
-            v++;
-            if(v == 4)
-            {
-                renderer.addVertexData(quadData);
-                renderer.putPosition(offset.getX(), offset.getY(), offset.getZ());
-                //Arrays.fill(quadData, 0);
-                v = 0;
-            }
+            renderer.endVertex();
         }
     }
 
-    private void checkVertexFormat()
-    {
-        if (quadData == null || renderer.getVertexFormat().getNextOffset() != quadData.length)
-        {
-            quadData = new int[renderer.getVertexFormat().getNextOffset()];
-        }
-    }
-
-    public void setBuffer(BufferBuilder buffer)
+    public void setBuffer(IVertexBuilder buffer)
     {
         this.renderer = buffer;
-        checkVertexFormat();
-    }
-
-    public void setOffset(BlockPos offset)
-    {
-        this.offset = new BlockPos(offset);
     }
 
     @Override
     public void setQuadTint(int tint) {}
     @Override
-    public void setQuadOrientation(EnumFacing orientation) {}
+    public void setQuadOrientation(Direction orientation) {}
     @Override
     public void setApplyDiffuseLighting(boolean diffuse) {}
     @Override

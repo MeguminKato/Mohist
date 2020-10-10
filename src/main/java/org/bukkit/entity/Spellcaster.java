@@ -1,23 +1,11 @@
 package org.bukkit.entity;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Represents a spell casting "Illager".
  */
 public interface Spellcaster extends Illager {
-
-    /**
-     * Gets the {@link Spell} the entity is currently using.
-     *
-     * @return the current spell
-     */
-    Spell getSpell();
-
-    /**
-     * Sets the {@link Spell} the entity is currently using.
-     *
-     * @param spell the spell the entity should be using
-     */
-    void setSpell(Spell spell);
 
     /**
      * Represents the current spell the entity is using.
@@ -49,4 +37,19 @@ public interface Spellcaster extends Illager {
          */
         BLINDNESS;
     }
+
+    /**
+     * Gets the {@link Spell} the entity is currently using.
+     *
+     * @return the current spell
+     */
+    @NotNull
+    Spell getSpell();
+
+    /**
+     * Sets the {@link Spell} the entity is currently using.
+     *
+     * @param spell the spell the entity should be using
+     */
+    void setSpell(@NotNull Spell spell);
 }

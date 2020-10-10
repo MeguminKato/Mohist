@@ -3,24 +3,21 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Stores data for health-regain events
  */
 public class EntityRegainHealthEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-    private final RegainReason regainReason;
     private boolean cancelled;
     private double amount;
+    private final RegainReason regainReason;
 
-    public EntityRegainHealthEvent(final Entity entity, final double amount, final RegainReason regainReason) {
+    public EntityRegainHealthEvent(@NotNull final Entity entity, final double amount, @NotNull final RegainReason regainReason) {
         super(entity);
         this.amount = amount;
         this.regainReason = regainReason;
-    }
-
-    public static HandlerList getHandlerList() {
-        return handlers;
     }
 
     /**
@@ -57,12 +54,19 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
      * @return A RegainReason detailing the reason for the entity regaining
      *     health
      */
+    @NotNull
     public RegainReason getRegainReason() {
         return regainReason;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    @NotNull
+    public static HandlerList getHandlerList() {
         return handlers;
     }
 

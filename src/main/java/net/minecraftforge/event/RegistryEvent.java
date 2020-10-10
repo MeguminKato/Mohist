@@ -19,23 +19,24 @@
 
 package net.minecraftforge.event;
 
-import com.google.common.collect.ImmutableList;
 import java.util.Collection;
 import java.util.stream.Collectors;
+
+import net.minecraftforge.fml.event.lifecycle.IModBusEvent;
+import org.apache.commons.lang3.Validate;
+
+import com.google.common.collect.ImmutableList;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.ModContainer;
-import net.minecraftforge.fml.common.eventhandler.Event;
-import net.minecraftforge.fml.common.eventhandler.GenericEvent;
-import net.minecraftforge.fml.common.eventhandler.IContextSetter;
+import net.minecraftforge.fml.ModContainer;
+import net.minecraftforge.eventbus.api.GenericEvent;
 import net.minecraftforge.registries.IForgeRegistry;
 import net.minecraftforge.registries.IForgeRegistryEntry;
-import org.apache.commons.lang3.Validate;
 
 
 /**
  * RegistryEvent supertype.
  */
-public class RegistryEvent<T extends IForgeRegistryEntry<T>> extends GenericEvent<T> implements IContextSetter
+public class RegistryEvent<T extends IForgeRegistryEntry<T>> extends GenericEvent<T> implements IModBusEvent
 {
     RegistryEvent(Class<T> clazz) {
         super(clazz);
@@ -43,8 +44,13 @@ public class RegistryEvent<T extends IForgeRegistryEntry<T>> extends GenericEven
     /**
      * Register new registries when you receive this event, through the {@link RecipeBuilder}
      */
-    public static class NewRegistry extends Event
+    public static class NewRegistry extends net.minecraftforge.eventbus.api.Event implements IModBusEvent
     {
+        public NewRegistry(ModContainer mc) {}
+        @Override
+        public String toString() {
+            return "RegistryEvent.NewRegistry";
+        }
     }
 
     /**
@@ -80,6 +86,10 @@ public class RegistryEvent<T extends IForgeRegistryEntry<T>> extends GenericEven
             return name;
         }
 
+        @Override
+        public String toString() {
+            return "RegistryEvent.Register<"+getName()+">";
+        }
     }
 
     public static class MissingMappings<T extends IForgeRegistryEntry<T>> extends RegistryEvent<T>
@@ -114,7 +124,7 @@ public class RegistryEvent<T extends IForgeRegistryEntry<T>> extends GenericEven
 
         public ImmutableList<Mapping<T>> getMappings()
         {
-            return ImmutableList.copyOf(this.mappings.stream().filter(e -> e.key.getResourceDomain().equals(this.activeMod.getModId())).collect(Collectors.toList()));
+            return ImmutableList.copyOf(this.mappings.stream().filter(e -> e.key.getNamespace().equals(this.activeMod.getModId())).collect(Collectors.toList()));
         }
 
         public ImmutableList<Mapping<T>> getAllMappings()

@@ -1,8 +1,7 @@
 package com.mohistmc.entity;
 
-import net.minecraftforge.fml.common.registry.EntityRegistry;
-import org.bukkit.craftbukkit.v1_12_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_12_R1.entity.CraftEntity;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.entity.EntityType;
 
 public class CraftCustomEntity extends CraftEntity {
@@ -11,9 +10,9 @@ public class CraftCustomEntity extends CraftEntity {
 
     public CraftCustomEntity(CraftServer server, net.minecraft.entity.Entity entity) {
         super(server, entity);
-        this.entityName = EntityRegistry.getCustomEntityTypeName(entity.getClass());
+        this.entityName = ""; /*EntityRegistry.getCustomEntityTypeName(entity.getClass());*/
         if (entityName == null) {
-            entityName = entity.getName();
+            entityName = entity.getName().getString();
         }
     }
 
@@ -39,9 +38,9 @@ public class CraftCustomEntity extends CraftEntity {
 
     @Override
     public String getCustomName() {
-        final String name = this.getHandle().getCustomNameTag();
+        String name = this.getHandle().getCustomName().getString();
         if (name == null || name.length() == 0) {
-            return this.entity.getName();
+            return this.entity.getName().getString();
         }
         return name;
     }

@@ -20,38 +20,45 @@
 package net.minecraftforge.event.entity.player;
 
 import java.io.File;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.math.BlockPos;
+
+import net.minecraft.entity.item.ItemEntity;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.RegistryKey;
+import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.ForgeEventFactory;
+import net.minecraftforge.eventbus.api.Cancelable;
+import net.minecraft.block.BlockState;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
-import net.minecraftforge.fml.common.eventhandler.Event;
-import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
+import net.minecraftforge.eventbus.api.Event;
+
+import javax.annotation.Nonnull;
 
 /**
  * PlayerEvent is fired whenever an event involving Living entities occurs. <br>
- * If a method utilizes this {@link Event} as its parameter, the method will
+ * If a method utilizes this {@link net.minecraftforge.eventbus.api.Event} as its parameter, the method will
  * receive every child event of this class.<br>
  * <br>
  * All children of this event are fired on the {@link MinecraftForge#EVENT_BUS}.
  **/
 public class PlayerEvent extends LivingEvent
 {
-    private final EntityPlayer entityPlayer;
-    public PlayerEvent(EntityPlayer player)
+    private final PlayerEntity entityPlayer;
+    public PlayerEvent(PlayerEntity player)
     {
         super(player);
         entityPlayer = player;
     }
 
-    public EntityPlayer getEntityPlayer()
-    {
-        return entityPlayer;
-    }
-
+    /**
+     * @return Player
+     */
+    public PlayerEntity getPlayer() { return entityPlayer; }
     /**
      * HarvestCheck is fired when a player attempts to harvest a block.<br>
      * This event is fired whenever a player attempts to harvest a block in
@@ -62,7 +69,7 @@ public class PlayerEvent extends LivingEvent
      * {@link #state} contains the {@link IBlockState} that is being checked for harvesting. <br>
      * {@link #success} contains the boolean value for whether the Block will be successfully harvested. <br>
      * <br>
-     * This event is not {@link Cancelable}.<br>
+     * This event is not {@link net.minecraftforge.eventbus.api.Cancelable}.<br>
      * <br>
      * This event does not have a result. {@link HasResult}<br>
      * <br>
@@ -70,17 +77,17 @@ public class PlayerEvent extends LivingEvent
      **/
     public static class HarvestCheck extends PlayerEvent
     {
-        private final IBlockState state;
+        private final BlockState state;
         private boolean success;
 
-        public HarvestCheck(EntityPlayer player, IBlockState state, boolean success)
+        public HarvestCheck(PlayerEntity player, BlockState state, boolean success)
         {
             super(player);
             this.state = state;
             this.success = success;
         }
 
-        public IBlockState getTargetBlock() { return this.state; }
+        public BlockState getTargetBlock() { return this.state; }
         public boolean canHarvest() { return this.success; }
         public void setCanHarvest(boolean success){ this.success = success; }
     }
@@ -97,7 +104,7 @@ public class PlayerEvent extends LivingEvent
      * {@link #newSpeed} contains the newSpeed at which the player will break the block. <br>
      * {@link #pos} contains the coordinates at which this event is occurring. Y value -1 means location is unknown.<br>
      * <br>
-     * This event is {@link Cancelable}.<br>
+     * This event is {@link net.minecraftforge.eventbus.api.Cancelable}.<br>
      * If it is canceled, the player is unable to break the block.<br>
      * <br>
      * This event does not have a result. {@link HasResult}<br>
@@ -107,12 +114,12 @@ public class PlayerEvent extends LivingEvent
     @Cancelable
     public static class BreakSpeed extends PlayerEvent
     {
-        private final IBlockState state;
+        private final BlockState state;
         private final float originalSpeed;
         private float newSpeed = 0.0f;
         private final BlockPos pos; // Y position of -1 notes unknown location
 
-        public BreakSpeed(EntityPlayer player, IBlockState state, float original, BlockPos pos)
+        public BreakSpeed(PlayerEntity player, BlockState state, float original, BlockPos pos)
         {
             super(player);
             this.state = state;
@@ -121,7 +128,7 @@ public class PlayerEvent extends LivingEvent
             this.pos = pos;
         }
 
-        public IBlockState getState() { return state; }
+        public BlockState getState() { return state; }
         public float getOriginalSpeed() { return originalSpeed; }
         public float getNewSpeed() { return newSpeed; }
         public void setNewSpeed(float newSpeed) { this.newSpeed = newSpeed; }
@@ -138,7 +145,7 @@ public class PlayerEvent extends LivingEvent
      * {@link #username} contains the username of the player.
      * {@link #displayname} contains the display name of the player.
      * <br>
-     * This event is not {@link Cancelable}.
+     * This event is not {@link net.minecraftforge.eventbus.api.Cancelable}.
      * <br>
      * This event does not have a result. {@link HasResult}
      * <br>
@@ -146,31 +153,27 @@ public class PlayerEvent extends LivingEvent
      **/
     public static class NameFormat extends PlayerEvent
     {
-        private final String username;
-        private String displayname;
+        private final ITextComponent username;
+        private ITextComponent displayname;
 
-        public NameFormat(EntityPlayer player, String username) {
+        public NameFormat(PlayerEntity player, ITextComponent username) 
+        {
             super(player);
             this.username = username;
             this.setDisplayname(username);
-            CraftPlayer cplayer = (CraftPlayer) player.getBukkitEntity();
-            String displayName = cplayer.getDisplayName();
-            if(displayName != null) {
-                displayname = displayName;
-            }
         }
 
-        public String getUsername()
+        public ITextComponent getUsername()
         {
             return username;
         }
 
-        public String getDisplayname()
+        public ITextComponent getDisplayname()
         {
             return displayname;
         }
 
-        public void setDisplayname(String displayname)
+        public void setDisplayname(ITextComponent displayname)
         {
             this.displayname = displayname;
         }
@@ -182,10 +185,10 @@ public class PlayerEvent extends LivingEvent
      */
     public static class Clone extends PlayerEvent
     {
-        private final EntityPlayer original;
+        private final PlayerEntity original;
         private final boolean wasDeath;
 
-        public Clone(EntityPlayer _new, EntityPlayer oldPlayer, boolean wasDeath)
+        public Clone(PlayerEntity _new, PlayerEntity oldPlayer, boolean wasDeath)
         {
             super(_new);
             this.original = oldPlayer;
@@ -195,7 +198,7 @@ public class PlayerEvent extends LivingEvent
         /**
          * The old EntityPlayer that this new entity is a clone of.
          */
-        public EntityPlayer getOriginal()
+        public PlayerEntity getOriginal()
         {
             return original;
         }
@@ -218,7 +221,7 @@ public class PlayerEvent extends LivingEvent
 
         private final Entity target;
 
-        public StartTracking(EntityPlayer player, Entity target)
+        public StartTracking(PlayerEntity player, Entity target)
         {
             super(player);
             this.target = target;
@@ -241,7 +244,7 @@ public class PlayerEvent extends LivingEvent
 
         private final Entity target;
 
-        public StopTracking(EntityPlayer player, Entity target)
+        public StopTracking(PlayerEntity player, Entity target)
         {
             super(player);
             this.target = target;
@@ -266,7 +269,7 @@ public class PlayerEvent extends LivingEvent
         private final File playerDirectory;
         private final String playerUUID;
 
-        public LoadFromFile(EntityPlayer player, File originDirectory, String playerUUID)
+        public LoadFromFile(PlayerEntity player, File originDirectory, String playerUUID)
         {
             super(player);
             this.playerDirectory = originDirectory;
@@ -319,7 +322,7 @@ public class PlayerEvent extends LivingEvent
         private final File playerDirectory;
         private final String playerUUID;
 
-        public SaveToFile(EntityPlayer player, File originDirectory, String playerUUID)
+        public SaveToFile(PlayerEntity player, File originDirectory, String playerUUID)
         {
             super(player);
             this.playerDirectory = originDirectory;
@@ -366,7 +369,7 @@ public class PlayerEvent extends LivingEvent
 
         private double visibilityModifier = 1D;
 
-        public Visibility(EntityPlayer player)
+        public Visibility(PlayerEntity player)
         {
             super(player);
         }
@@ -385,6 +388,126 @@ public class PlayerEvent extends LivingEvent
         public double getVisibilityModifier()
         {
             return visibilityModifier;
+        }
+    }
+
+    public static class ItemPickupEvent extends PlayerEvent {
+        /**
+         * Original EntityItem with current remaining stack size
+         */
+        private final ItemEntity originalEntity;
+        /**
+         * Clone item stack, containing the item and amount picked up
+         */
+        private final ItemStack stack;
+        public ItemPickupEvent(PlayerEntity player, ItemEntity entPickedUp, ItemStack stack)
+        {
+            super(player);
+            this.originalEntity = entPickedUp;
+            this.stack = stack;
+        }
+
+        public ItemStack getStack() {
+            return stack;
+        }
+
+        public ItemEntity getOriginalEntity() {
+            return originalEntity;
+        }
+    }
+
+    public static class ItemCraftedEvent extends PlayerEvent {
+        @Nonnull
+        private final ItemStack crafting;
+        private final IInventory craftMatrix;
+        public ItemCraftedEvent(PlayerEntity player, @Nonnull ItemStack crafting, IInventory craftMatrix)
+        {
+            super(player);
+            this.crafting = crafting;
+            this.craftMatrix = craftMatrix;
+        }
+
+        @Nonnull
+        public ItemStack getCrafting()
+        {
+            return this.crafting;
+        }
+
+        public IInventory getInventory()
+        {
+            return this.craftMatrix;
+        }
+    }
+
+    public static class ItemSmeltedEvent extends PlayerEvent {
+        @Nonnull
+        private final ItemStack smelting;
+        public ItemSmeltedEvent(PlayerEntity player, @Nonnull ItemStack crafting)
+        {
+            super(player);
+            this.smelting = crafting;
+        }
+
+        @Nonnull
+        public ItemStack getSmelting()
+        {
+            return this.smelting;
+        }
+    }
+
+    public static class PlayerLoggedInEvent extends PlayerEvent {
+        public PlayerLoggedInEvent(PlayerEntity player)
+        {
+            super(player);
+        }
+    }
+
+    public static class PlayerLoggedOutEvent extends PlayerEvent {
+        public PlayerLoggedOutEvent(PlayerEntity player)
+        {
+            super(player);
+        }
+    }
+
+    public static class PlayerRespawnEvent extends PlayerEvent {
+        private final boolean endConquered;
+
+        public PlayerRespawnEvent(PlayerEntity player, boolean endConquered)
+        {
+            super(player);
+            this.endConquered = endConquered;
+        }
+
+        /**
+         * Did this respawn event come from the player conquering the end?
+         * @return if this respawn was because the player conquered the end
+         */
+        public boolean isEndConquered()
+        {
+            return this.endConquered;
+        }
+
+
+    }
+
+    public static class PlayerChangedDimensionEvent extends PlayerEvent {
+        private final RegistryKey<World> fromDim;
+        private final RegistryKey<World> toDim;
+        public PlayerChangedDimensionEvent(PlayerEntity player, RegistryKey<World> fromDim, RegistryKey<World> toDim)
+        {
+            super(player);
+            this.fromDim = fromDim;
+            this.toDim = toDim;
+        }
+
+        public RegistryKey<World> getFrom()
+        {
+            return this.fromDim;
+        }
+
+        public RegistryKey<World> getTo()
+        {
+            return this.toDim;
         }
     }
 }

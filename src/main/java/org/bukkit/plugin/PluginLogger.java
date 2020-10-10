@@ -3,6 +3,7 @@ package org.bukkit.plugin;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * The PluginLogger class is a modified {@link Logger} that prepends all
@@ -19,16 +20,16 @@ public class PluginLogger extends Logger {
      *
      * @param context A reference to the plugin
      */
-    public PluginLogger(Plugin context) {
+    public PluginLogger(@NotNull Plugin context) {
         super(context.getClass().getCanonicalName(), null);
         String prefix = context.getDescription().getPrefix();
-        pluginName = prefix != null ? "[" + prefix + "] " : "[" + context.getDescription().getName() + "] ";
+        pluginName = prefix != null ? new StringBuilder().append("[").append(prefix).append("] ").toString() : "[" + context.getDescription().getName() + "] ";
         setParent(context.getServer().getLogger());
         setLevel(Level.ALL);
     }
 
     @Override
-    public void log(LogRecord logRecord) {
+    public void log(@NotNull LogRecord logRecord) {
         logRecord.setMessage(pluginName + logRecord.getMessage());
         super.log(logRecord);
     }

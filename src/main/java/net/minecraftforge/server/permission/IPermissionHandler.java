@@ -20,9 +20,10 @@
 package net.minecraftforge.server.permission;
 
 import com.mojang.authlib.GameProfile;
-import java.util.Collection;
-import javax.annotation.Nullable;
 import net.minecraftforge.server.permission.context.IContext;
+
+import javax.annotation.Nullable;
+import java.util.Collection;
 
 public interface IPermissionHandler
 {

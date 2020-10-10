@@ -1,8 +1,14 @@
 package org.bukkit.entity;
 
+import com.google.common.base.Preconditions;
+import com.mohistmc.entity.CraftCustomAbstractHorse;
+import com.mohistmc.entity.CraftCustomChestHorse;
+import com.mohistmc.entity.CustomProjectileEntity;
 import java.util.HashMap;
 import java.util.Map;
+import org.bukkit.Keyed;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.minecart.CommandMinecart;
 import org.bukkit.entity.minecart.ExplosiveMinecart;
@@ -13,12 +19,11 @@ import org.bukkit.entity.minecart.SpawnerMinecart;
 import org.bukkit.entity.minecart.StorageMinecart;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffectType;
-import com.mohistmc.entity.CraftCustomAbstractHorse;
-import com.mohistmc.entity.CraftCustomChestHorse;
-import com.mohistmc.entity.CraftCustomEntity;
-import com.mohistmc.entity.CustomProjectileEntity;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public enum EntityType {
+public enum EntityType implements Keyed {
 
     // These strings MUST match the strings in nms.EntityTypes and are case sensitive.
     /**
@@ -31,7 +36,7 @@ public enum EntityType {
     /**
      * An experience orb.
      */
-    EXPERIENCE_ORB("xp_orb", ExperienceOrb.class, 2),
+    EXPERIENCE_ORB("experience_orb", ExperienceOrb.class, 2),
     /**
      * @see AreaEffectCloud
      */
@@ -83,15 +88,15 @@ public enum EntityType {
     /**
      * An ender eye signal.
      */
-    ENDER_SIGNAL("eye_of_ender_signal", EnderSignal.class, 15),
+    ENDER_SIGNAL("eye_of_ender", EnderSignal.class, 15),
     /**
      * A flying splash potion.
      */
-    SPLASH_POTION("potion", SplashPotion.class, 16, false),
+    SPLASH_POTION("potion", ThrownPotion.class, 16, false),
     /**
      * A flying experience bottle.
      */
-    THROWN_EXP_BOTTLE("xp_bottle", ThrownExpBottle.class, 17),
+    THROWN_EXP_BOTTLE("experience_bottle", ThrownExpBottle.class, 17),
     /**
      * An item frame on a wall.
      */
@@ -111,13 +116,13 @@ public enum EntityType {
     /**
      * Internal representation of a Firework once it has been launched.
      */
-    FIREWORK("fireworks_rocket", Firework.class, 22, false),
+    FIREWORK("firework_rocket", Firework.class, 22, false),
     /**
      * @see Husk
      */
     HUSK("husk", Husk.class, 23),
     /**
-     * Like {@link #TIPPED_ARROW} but causes the {@link PotionEffectType#GLOWING} effect on all team members.
+     * Like {@link #ARROW} but causes the {@link PotionEffectType#GLOWING} effect on all team members.
      */
     SPECTRAL_ARROW("spectral_arrow", SpectralArrow.class, 24),
     /**
@@ -155,11 +160,11 @@ public enum EntityType {
     /**
      * @see EvokerFangs
      */
-    EVOKER_FANGS("evocation_fangs", EvokerFangs.class, 33),
+    EVOKER_FANGS("evoker_fangs", EvokerFangs.class, 33),
     /**
      * @see Evoker
      */
-    EVOKER("evocation_illager", Evoker.class, 34),
+    EVOKER("evoker", Evoker.class, 34),
     /**
      * @see Vex
      */
@@ -167,15 +172,15 @@ public enum EntityType {
     /**
      * @see Vindicator
      */
-    VINDICATOR("vindication_illager", Vindicator.class, 36),
+    VINDICATOR("vindicator", Vindicator.class, 36),
     /**
      * @see Illusioner
      */
-    ILLUSIONER("illusion_illager", Illusioner.class, 37),
+    ILLUSIONER("illusioner", Illusioner.class, 37),
     /**
      * @see CommandMinecart
      */
-    MINECART_COMMAND("commandblock_minecart", CommandMinecart.class, 40),
+    MINECART_COMMAND("command_block_minecart", CommandMinecart.class, 40),
     /**
      * A placed boat.
      */
@@ -211,7 +216,7 @@ public enum EntityType {
     ZOMBIE("zombie", Zombie.class, 54),
     SLIME("slime", Slime.class, 55),
     GHAST("ghast", Ghast.class, 56),
-    PIG_ZOMBIE("zombie_pigman", PigZombie.class, 57),
+    ZOMBIFIED_PIGLIN("zombified_piglin", PigZombie.class, 57),
     ENDERMAN("enderman", Enderman.class, 58),
     CAVE_SPIDER("cave_spider", CaveSpider.class, 59),
     SILVERFISH("silverfish", Silverfish.class, 60),
@@ -231,9 +236,9 @@ public enum EntityType {
     SQUID("squid", Squid.class, 94),
     WOLF("wolf", Wolf.class, 95),
     MUSHROOM_COW("mooshroom", MushroomCow.class, 96),
-    SNOWMAN("snowman", Snowman.class, 97),
+    SNOWMAN("snow_golem", Snowman.class, 97),
     OCELOT("ocelot", Ocelot.class, 98),
-    IRON_GOLEM("villager_golem", IronGolem.class, 99),
+    IRON_GOLEM("iron_golem", IronGolem.class, 99),
     HORSE("horse", Horse.class, 100),
     RABBIT("rabbit", Rabbit.class, 101),
     POLAR_BEAR("polar_bear", PolarBear.class, 102),
@@ -241,30 +246,40 @@ public enum EntityType {
     LLAMA_SPIT("llama_spit", LlamaSpit.class, 104),
     PARROT("parrot", Parrot.class, 105),
     VILLAGER("villager", Villager.class, 120),
-    ENDER_CRYSTAL("ender_crystal", EnderCrystal.class, 200),
-    // These don't have an entity ID in nms.EntityTypes.
-    /**
-     * A flying lingering potion
-     */
-    LINGERING_POTION(null, LingeringPotion.class, -1, false),
+    ENDER_CRYSTAL("end_crystal", EnderCrystal.class, 200),
+    TURTLE("turtle", Turtle.class, -1),
+    PHANTOM("phantom", Phantom.class, -1),
+    TRIDENT("trident", Trident.class, -1),
+    COD("cod", Cod.class, -1),
+    SALMON("salmon", Salmon.class, -1),
+    PUFFERFISH("pufferfish", PufferFish.class, -1),
+    TROPICAL_FISH("tropical_fish", TropicalFish.class, -1),
+    DROWNED("drowned", Drowned.class, -1),
+    DOLPHIN("dolphin", Dolphin.class, -1),
+    CAT("cat", Cat.class, -1),
+    PANDA("panda", Panda.class, -1),
+    PILLAGER("pillager", Pillager.class, -1),
+    RAVAGER("ravager", Ravager.class, -1),
+    TRADER_LLAMA("trader_llama", TraderLlama.class, -1),
+    WANDERING_TRADER("wandering_trader", WanderingTrader.class, -1),
+    FOX("fox", Fox.class, -1),
+    BEE("bee", Bee.class, -1),
+    HOGLIN("hoglin", Hoglin.class, -1),
+    PIGLIN("piglin", Piglin.class, -1),
+    STRIDER("strider", Strider.class, -1),
+    ZOGLIN("zoglin", Zoglin.class, -1),
+    PIGLIN_BRUTE("piglin_brute", PiglinBrute.class, -1),
     /**
      * A fishing line and bobber.
      */
-    FISHING_HOOK(null, FishHook.class, -1, false),
+    FISHING_HOOK("fishing_bobber", FishHook.class, -1, false),
     /**
      * A bolt of lightning.
      * <p>
      * Spawn with {@link World#strikeLightning(Location)}.
      */
-    LIGHTNING(null, LightningStrike.class, -1, false),
-    WEATHER(null, Weather.class, -1, false),
-    PLAYER(null, Player.class, -1, false),
-    COMPLEX_PART(null, ComplexEntityPart.class, -1, false),
-    /**
-     * Like {@link #ARROW} but tipped with a specific potion which is applied on
-     * contact.
-     */
-    TIPPED_ARROW(null, TippedArrow.class, -1),
+    LIGHTNING("lightning_bolt", LightningStrike.class, -1, false),
+    PLAYER("player", Player.class, -1, false),
     /**
      * An unknown entity without an Entity Class
      */
@@ -273,8 +288,14 @@ public enum EntityType {
     FORGE_MOD_CHEST_HORSE("forge_mod_chest_horse", CraftCustomChestHorse.class, -1, false),
     FORGE_MOD_HORSE("forge_mod_horse", CraftCustomAbstractHorse.class, -1, false);
 
-    private static final Map<String, EntityType> NAME_MAP = new HashMap<>();
-    private static final Map<Short, EntityType> ID_MAP = new HashMap<>();
+    private final String name;
+    private final Class<? extends Entity> clazz;
+    private final short typeId;
+    private final boolean independent, living;
+    private final NamespacedKey key;
+
+    private static final Map<String, EntityType> NAME_MAP = new HashMap<String, EntityType>();
+    private static final Map<Short, EntityType> ID_MAP = new HashMap<Short, EntityType>();
 
     static {
         for (EntityType type : values()) {
@@ -285,34 +306,83 @@ public enum EntityType {
                 ID_MAP.put(type.typeId, type);
             }
         }
+
+        // Add legacy names
+        NAME_MAP.put("xp_orb", EXPERIENCE_ORB);
+        NAME_MAP.put("eye_of_ender_signal", ENDER_SIGNAL);
+        NAME_MAP.put("xp_bottle", THROWN_EXP_BOTTLE);
+        NAME_MAP.put("fireworks_rocket", FIREWORK);
+        NAME_MAP.put("evocation_fangs", EVOKER_FANGS);
+        NAME_MAP.put("evocation_illager", EVOKER);
+        NAME_MAP.put("vindication_illager", VINDICATOR);
+        NAME_MAP.put("illusion_illager", ILLUSIONER);
+        NAME_MAP.put("commandblock_minecart", MINECART_COMMAND);
+        NAME_MAP.put("snowman", SNOWMAN);
+        NAME_MAP.put("villager_golem", IRON_GOLEM);
+        NAME_MAP.put("ender_crystal", ENDER_CRYSTAL);
+        NAME_MAP.put("zombie_pigman", ZOMBIFIED_PIGLIN);
     }
 
-    private String name;
-    private Class<? extends Entity> clazz;
-    private short typeId;
-    private boolean independent, living;
-
-    private EntityType(String name, Class<? extends Entity> clazz, int typeId) {
+    private EntityType(/*@Nullable*/ String name, /*@Nullable*/ Class<? extends Entity> clazz, int typeId) {
         this(name, clazz, typeId, true);
     }
 
-    private EntityType(String name, Class<? extends Entity> clazz, int typeId, boolean independent) {
+    private EntityType(/*@Nullable*/ String name, /*@Nullable*/ Class<? extends Entity> clazz, int typeId, boolean independent) {
         this.name = name;
         this.clazz = clazz;
         this.typeId = (short) typeId;
         this.independent = independent;
-        if (clazz != null) {
-            this.living = LivingEntity.class.isAssignableFrom(clazz);
-        }
+        this.living = clazz != null && LivingEntity.class.isAssignableFrom(clazz);
+        this.key = (name == null) ? null : NamespacedKey.minecraft(name);
     }
 
     /**
+     * Gets the entity type name.
+     *
+     * @return the entity type's name
+     * @deprecated Magic value
+     */
+    @Deprecated
+    @Nullable
+    public String getName() {
+        return name;
+    }
+
+    @NotNull
+    @Override
+    public NamespacedKey getKey() {
+        Preconditions.checkArgument(key != null, "EntityType doesn't have key! Is it UNKNOWN?");
+
+        return key;
+    }
+
+    @Nullable
+    public Class<? extends Entity> getEntityClass() {
+        return clazz;
+    }
+
+    /**
+     * Gets the entity type id.
+     *
+     * @return the raw type id
+     * @deprecated Magic value
+     */
+    @Deprecated
+    public short getTypeId() {
+        return typeId;
+    }
+
+    /**
+     * Gets an entity type from its name.
      *
      * @param name the entity type's name
      * @return the matching entity type or null
      * @deprecated Magic value
      */
-    public static EntityType fromName(String name) {
+    @Deprecated
+    @Contract("null -> null")
+    @Nullable
+    public static EntityType fromName(@Nullable String name) {
         if (name == null) {
             return null;
         }
@@ -320,38 +390,19 @@ public enum EntityType {
     }
 
     /**
+     * Gets an entity from its id.
      *
      * @param id the raw type id
      * @return the matching entity type or null
      * @deprecated Magic value
      */
+    @Deprecated
+    @Nullable
     public static EntityType fromId(int id) {
         if (id > Short.MAX_VALUE) {
             return null;
         }
         return ID_MAP.get((short) id);
-    }
-
-    /**
-     *
-     * @return the entity type's name
-     * @deprecated Magic value
-     */
-    public String getName() {
-        return name;
-    }
-
-    public Class<? extends Entity> getEntityClass() {
-        return clazz;
-    }
-
-    /**
-     *
-     * @return the raw type id
-     * @deprecated Magic value
-     */
-    public short getTypeId() {
-        return typeId;
     }
 
     /**

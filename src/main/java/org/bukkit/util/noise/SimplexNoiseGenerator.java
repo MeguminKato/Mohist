@@ -1,7 +1,9 @@
+// CHECKSTYLE:OFF
 package org.bukkit.util.noise;
 
 import java.util.Random;
 import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Generates simplex-based noise.
@@ -24,25 +26,25 @@ public class SimplexNoiseGenerator extends PerlinNoiseGenerator {
     protected static final double G42 = G4 * 2.0;
     protected static final double G43 = G4 * 3.0;
     protected static final double G44 = G4 * 4.0 - 1.0;
-    protected static final int grad4[][] = {{0, 1, 1, 1}, {0, 1, 1, -1}, {0, 1, -1, 1}, {0, 1, -1, -1},
-            {0, -1, 1, 1}, {0, -1, 1, -1}, {0, -1, -1, 1}, {0, -1, -1, -1},
-            {1, 0, 1, 1}, {1, 0, 1, -1}, {1, 0, -1, 1}, {1, 0, -1, -1},
-            {-1, 0, 1, 1}, {-1, 0, 1, -1}, {-1, 0, -1, 1}, {-1, 0, -1, -1},
-            {1, 1, 0, 1}, {1, 1, 0, -1}, {1, -1, 0, 1}, {1, -1, 0, -1},
-            {-1, 1, 0, 1}, {-1, 1, 0, -1}, {-1, -1, 0, 1}, {-1, -1, 0, -1},
-            {1, 1, 1, 0}, {1, 1, -1, 0}, {1, -1, 1, 0}, {1, -1, -1, 0},
-            {-1, 1, 1, 0}, {-1, 1, -1, 0}, {-1, -1, 1, 0}, {-1, -1, -1, 0}};
-    protected static final int simplex[][] = {
-            {0, 1, 2, 3}, {0, 1, 3, 2}, {0, 0, 0, 0}, {0, 2, 3, 1}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {1, 2, 3, 0},
-            {0, 2, 1, 3}, {0, 0, 0, 0}, {0, 3, 1, 2}, {0, 3, 2, 1}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {1, 3, 2, 0},
-            {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0},
-            {1, 2, 0, 3}, {0, 0, 0, 0}, {1, 3, 0, 2}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {2, 3, 0, 1}, {2, 3, 1, 0},
-            {1, 0, 2, 3}, {1, 0, 3, 2}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {2, 0, 3, 1}, {0, 0, 0, 0}, {2, 1, 3, 0},
-            {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0},
-            {2, 0, 1, 3}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {3, 0, 1, 2}, {3, 0, 2, 1}, {0, 0, 0, 0}, {3, 1, 2, 0},
-            {2, 1, 0, 3}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {3, 1, 0, 2}, {0, 0, 0, 0}, {3, 2, 0, 1}, {3, 2, 1, 0}};
-    private static final SimplexNoiseGenerator instance = new SimplexNoiseGenerator();
+    protected static final int[][] grad4 = {{0, 1, 1, 1}, {0, 1, 1, -1}, {0, 1, -1, 1}, {0, 1, -1, -1},
+        {0, -1, 1, 1}, {0, -1, 1, -1}, {0, -1, -1, 1}, {0, -1, -1, -1},
+        {1, 0, 1, 1}, {1, 0, 1, -1}, {1, 0, -1, 1}, {1, 0, -1, -1},
+        {-1, 0, 1, 1}, {-1, 0, 1, -1}, {-1, 0, -1, 1}, {-1, 0, -1, -1},
+        {1, 1, 0, 1}, {1, 1, 0, -1}, {1, -1, 0, 1}, {1, -1, 0, -1},
+        {-1, 1, 0, 1}, {-1, 1, 0, -1}, {-1, -1, 0, 1}, {-1, -1, 0, -1},
+        {1, 1, 1, 0}, {1, 1, -1, 0}, {1, -1, 1, 0}, {1, -1, -1, 0},
+        {-1, 1, 1, 0}, {-1, 1, -1, 0}, {-1, -1, 1, 0}, {-1, -1, -1, 0}};
+    protected static final int[][] simplex = {
+        {0, 1, 2, 3}, {0, 1, 3, 2}, {0, 0, 0, 0}, {0, 2, 3, 1}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {1, 2, 3, 0},
+        {0, 2, 1, 3}, {0, 0, 0, 0}, {0, 3, 1, 2}, {0, 3, 2, 1}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {1, 3, 2, 0},
+        {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0},
+        {1, 2, 0, 3}, {0, 0, 0, 0}, {1, 3, 0, 2}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {2, 3, 0, 1}, {2, 3, 1, 0},
+        {1, 0, 2, 3}, {1, 0, 3, 2}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {2, 0, 3, 1}, {0, 0, 0, 0}, {2, 1, 3, 0},
+        {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0},
+        {2, 0, 1, 3}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {3, 0, 1, 2}, {3, 0, 2, 1}, {0, 0, 0, 0}, {3, 1, 2, 0},
+        {2, 1, 0, 3}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {3, 1, 0, 2}, {0, 0, 0, 0}, {3, 2, 0, 1}, {3, 2, 1, 0}};
     protected double offsetW;
+    private static final SimplexNoiseGenerator instance = new SimplexNoiseGenerator();
 
     protected SimplexNoiseGenerator() {
         super();
@@ -53,7 +55,7 @@ public class SimplexNoiseGenerator extends PerlinNoiseGenerator {
      *
      * @param world World to construct this generator for
      */
-    public SimplexNoiseGenerator(World world) {
+    public SimplexNoiseGenerator(@NotNull World world) {
         this(new Random(world.getSeed()));
     }
 
@@ -71,20 +73,20 @@ public class SimplexNoiseGenerator extends PerlinNoiseGenerator {
      *
      * @param rand Random to construct with
      */
-    public SimplexNoiseGenerator(Random rand) {
+    public SimplexNoiseGenerator(@NotNull Random rand) {
         super(rand);
         offsetW = rand.nextDouble() * 256;
     }
 
-    protected static double dot(int g[], double x, double y) {
+    protected static double dot(@NotNull int[] g, double x, double y) {
         return g[0] * x + g[1] * y;
     }
 
-    protected static double dot(int g[], double x, double y, double z) {
+    protected static double dot(@NotNull int[] g, double x, double y, double z) {
         return g[0] * x + g[1] * y + g[2] * z;
     }
 
-    protected static double dot(int g[], double x, double y, double z, double w) {
+    protected static double dot(@NotNull int[] g, double x, double y, double z, double w) {
         return g[0] * x + g[1] * y + g[2] * z + g[3] * w;
     }
 
@@ -136,15 +138,6 @@ public class SimplexNoiseGenerator extends PerlinNoiseGenerator {
      */
     public static double getNoise(double x, double y, double z, double w) {
         return instance.noise(x, y, z, w);
-    }
-
-    /**
-     * Gets the singleton unseeded instance of this generator
-     *
-     * @return Singleton
-     */
-    public static SimplexNoiseGenerator getInstance() {
-        return instance;
     }
 
     @Override
@@ -516,5 +509,15 @@ public class SimplexNoiseGenerator extends PerlinNoiseGenerator {
 
         // Sum up and scale the result to cover the range [-1,1]
         return 27.0 * (n0 + n1 + n2 + n3 + n4);
+    }
+
+    /**
+     * Gets the singleton unseeded instance of this generator
+     *
+     * @return Singleton
+     */
+    @NotNull
+    public static SimplexNoiseGenerator getInstance() {
+        return instance;
     }
 }

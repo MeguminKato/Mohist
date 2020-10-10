@@ -19,41 +19,57 @@
 
 package net.minecraftforge.client.event;
 
-import net.minecraft.client.renderer.texture.TextureMap;
-import net.minecraftforge.fml.common.eventhandler.Event;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.eventbus.api.Event;
+import net.minecraft.client.renderer.texture.AtlasTexture;
+import net.minecraftforge.fml.event.lifecycle.IModBusEvent;
+
+import java.util.Set;
 
 
-public class TextureStitchEvent extends Event
+public class TextureStitchEvent extends Event implements IModBusEvent
 {
-    private final TextureMap map;
+    private final AtlasTexture map;
 
-    public TextureStitchEvent(TextureMap map)
+    public TextureStitchEvent(AtlasTexture map)
     {
         this.map = map;
     }
 
-    public TextureMap getMap()
+    public AtlasTexture getMap()
     {
         return map;
     }
 
     /**
-     * Fired when the TextureMap is told to refresh it's stitched texture. 
-     * Called after the Stitched list is cleared, but before any blocks or items
-     * add themselves to the list.
+     * Fired when the TextureMap is told to refresh it's stitched texture.
+     * Called before the {@link net.minecraft.client.renderer.texture.TextureAtlasSprite} are loaded.
      */
     public static class Pre extends TextureStitchEvent
     {
-        public Pre(TextureMap map){ super(map); }
+        private final Set<ResourceLocation> sprites;
+
+        public Pre(AtlasTexture map, Set<ResourceLocation> sprites)
+        {
+            super(map);
+            this.sprites = sprites;
+        }
+
+        /**
+         * Add a sprite to be stitched into the Texture Atlas.
+         */
+        public boolean addSprite(ResourceLocation sprite) {
+            return this.sprites.add(sprite);
+        }
     }
 
     /**
-     * This event is fired once the texture map has loaded all textures and 
+     * This event is fired once the texture map has loaded all textures and
      * stitched them together. All Icons should have there locations defined
      * by the time this is fired.
      */
     public static class Post extends TextureStitchEvent
     {
-        public Post(TextureMap map){ super(map); }
+        public Post(AtlasTexture map){ super(map); }
     }
 }

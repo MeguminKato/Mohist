@@ -1,35 +1,39 @@
 package org.bukkit.inventory;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Interface to the inventory of an Enchantment Table.
  */
 public interface EnchantingInventory extends Inventory {
 
     /**
-     * Get the item being enchanted.
-     *
-     * @return The current item.
-     */
-    ItemStack getItem();
-
-    /**
      * Set the item being enchanted.
      *
      * @param item The new item
      */
-    void setItem(ItemStack item);
+    void setItem(@Nullable ItemStack item);
 
     /**
-     * Get the secondary item being used for the enchant.
+     * Get the item being enchanted.
      *
-     * @return The second item
+     * @return The current item.
      */
-    ItemStack getSecondary();
+    @Nullable
+    ItemStack getItem();
 
     /**
      * Set the secondary item being used for the enchant.
      *
      * @param item The new item
      */
-    void setSecondary(ItemStack item);
+    void setSecondary(@Nullable ItemStack item);
+
+    /**
+     * Get the secondary item being used for the enchant.
+     *
+     * @return The second item
+     */
+    @Nullable
+    ItemStack getSecondary();
 }

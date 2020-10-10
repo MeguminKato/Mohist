@@ -19,69 +19,54 @@
 
 package net.minecraftforge.client.event;
 
-import net.minecraft.client.renderer.entity.RenderLivingBase;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
-import net.minecraftforge.fml.common.eventhandler.Event;
+import com.mojang.blaze3d.matrix.MatrixStack;
+import net.minecraft.client.renderer.IRenderTypeBuffer;
+import net.minecraftforge.eventbus.api.Cancelable;
+import net.minecraftforge.eventbus.api.Event;
+import net.minecraft.client.renderer.entity.LivingRenderer;
+import net.minecraft.client.renderer.entity.model.EntityModel;
+import net.minecraft.entity.LivingEntity;
 
-public abstract class RenderLivingEvent<T extends EntityLivingBase> extends Event
+public abstract class RenderLivingEvent<T extends LivingEntity, M extends EntityModel<T>> extends Event
 {
-    private final EntityLivingBase entity;
-    private final RenderLivingBase<T> renderer;
+
+    private final LivingEntity entity;
+    private final LivingRenderer<T, M> renderer;
     private final float partialRenderTick;
-    private final double x;
-    private final double y;
-    private final double z;
+    private final MatrixStack matrixStack;
+    private final IRenderTypeBuffer buffers;
+    private final int light;
 
-    @Deprecated
-    public RenderLivingEvent(EntityLivingBase entity, RenderLivingBase<T> renderer, double x, double y, double z)
-    {
-        this(entity, renderer, 1, x, y, z);
-    }
-
-    public RenderLivingEvent(EntityLivingBase entity, RenderLivingBase<T> renderer, float partialRenderTick, double x, double y, double z)
+    public RenderLivingEvent(LivingEntity entity, LivingRenderer<T, M> renderer, float partialRenderTick, MatrixStack matrixStack,
+                             IRenderTypeBuffer buffers, int light)
     {
         this.entity = entity;
         this.renderer = renderer;
         this.partialRenderTick = partialRenderTick;
-        this.x = x;
-        this.y = y;
-        this.z = z;
+        this.matrixStack = matrixStack;
+        this.buffers = buffers;
+        this.light = light;
     }
 
-    public EntityLivingBase getEntity() { return entity; }
-    public RenderLivingBase<T> getRenderer() { return renderer; }
+    public LivingEntity getEntity() { return entity; }
+    public LivingRenderer<T, M> getRenderer() { return renderer; }
     public float getPartialRenderTick() { return partialRenderTick; }
-    public double getX() { return x; }
-    public double getY() { return y; }
-    public double getZ() { return z; }
+    public MatrixStack getMatrixStack() { return matrixStack; }
+    public IRenderTypeBuffer getBuffers() { return buffers; }
+    public int getLight() { return light; }
 
     @Cancelable
-    public static class Pre<T extends EntityLivingBase> extends RenderLivingEvent<T>
+    public static class Pre<T extends LivingEntity, M extends EntityModel<T>> extends RenderLivingEvent<T, M>
     {
-        @Deprecated
-        public Pre(EntityLivingBase entity, RenderLivingBase<T> renderer, double x, double y, double z){ super(entity, renderer, x, y, z); }
-        public Pre(EntityLivingBase entity, RenderLivingBase<T> renderer, float partialRenderTick, double x, double y, double z){ super(entity, renderer, partialRenderTick, x, y, z); }
-    }
-    public static class Post<T extends EntityLivingBase> extends RenderLivingEvent<T>
-    {
-        @Deprecated
-        public Post(EntityLivingBase entity, RenderLivingBase<T> renderer, double x, double y, double z){ super(entity, renderer, x, y, z); }
-        public Post(EntityLivingBase entity, RenderLivingBase<T> renderer, float partialRenderTick, double x, double y, double z){ super(entity, renderer, partialRenderTick, x, y, z); }
-    }
-
-    public abstract static class Specials<T extends EntityLivingBase> extends RenderLivingEvent<T>
-    {
-        public Specials(EntityLivingBase entity, RenderLivingBase<T> renderer, double x, double y, double z){ super(entity, renderer, 0, x, y, z); }
-
-        @Cancelable
-        public static class Pre<T extends EntityLivingBase> extends Specials<T>
-        {
-            public Pre(EntityLivingBase entity, RenderLivingBase<T> renderer, double x, double y, double z){ super(entity, renderer, x, y, z); }
+        public Pre(LivingEntity entity, LivingRenderer<T, M> renderer, float partialRenderTick, MatrixStack matrixStack, IRenderTypeBuffer buffers, int light) {
+            super(entity, renderer, partialRenderTick, matrixStack, buffers, light);
         }
-        public static class Post<T extends EntityLivingBase> extends Specials<T>
-        {
-            public Post(EntityLivingBase entity, RenderLivingBase<T> renderer, double x, double y, double z){ super(entity, renderer,  x, y, z); }
+    }
+
+    public static class Post<T extends LivingEntity, M extends EntityModel<T>> extends RenderLivingEvent<T, M>
+    {
+        public Post(LivingEntity entity, LivingRenderer<T, M> renderer, float partialRenderTick, MatrixStack matrixStack, IRenderTypeBuffer buffers, int light) {
+            super(entity, renderer, partialRenderTick, matrixStack, buffers, light);
         }
     }
 }

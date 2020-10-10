@@ -19,20 +19,25 @@
 
 package net.minecraftforge.client.model.pipeline;
 
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.client.renderer.color.BlockColors;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.IBlockAccess;
+import net.minecraft.util.math.shapes.VoxelShapes;
+import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.world.IBlockDisplayReader;
 
 public class BlockInfo
 {
-    private static final EnumFacing[] SIDES = EnumFacing.values();
+    private static final Direction[] SIDES = Direction.values();
 
     private final BlockColors colors;
-    private IBlockAccess world;
-    private IBlockState state;
+    private IBlockDisplayReader world;
+    private BlockState state;
     private BlockPos blockPos;
 
     private final boolean[][][] t = new boolean[3][3][3];
@@ -46,8 +51,6 @@ public class BlockInfo
 
     private boolean full;
 
-    private float shx = 0, shy = 0, shz = 0;
-
     private int cachedTint = -1;
     private int cachedMultiplier = -1;
 
@@ -60,26 +63,23 @@ public class BlockInfo
     {
         if(cachedTint == tint) return cachedMultiplier;
         cachedTint = tint;
-        cachedMultiplier = colors.colorMultiplier(state, world, blockPos, tint);
+        cachedMultiplier = colors.getColor(state, world, blockPos, tint);
         return cachedMultiplier;
     }
 
+    @Deprecated
     public void updateShift()
     {
-        Vec3d offset = state.getOffset(world, blockPos);
-        shx = (float) offset.x;
-        shy = (float) offset.y;
-        shz = (float) offset.z;
     }
 
-    public void setWorld(IBlockAccess world)
+    public void setWorld(IBlockDisplayReader world)
     {
         this.world = world;
         cachedTint = -1;
         cachedMultiplier = -1;
     }
 
-    public void setState(IBlockState state)
+    public void setState(BlockState state)
     {
         this.state = state;
         cachedTint = -1;
@@ -91,7 +91,6 @@ public class BlockInfo
         this.blockPos = blockPos;
         cachedTint = -1;
         cachedMultiplier = -1;
-        shx = shy = shz = 0;
     }
 
     public void reset()
@@ -101,7 +100,6 @@ public class BlockInfo
         this.blockPos = null;
         cachedTint = -1;
         cachedMultiplier = -1;
-        shx = shy = shz = 0;
     }
 
     private float combine(int c, int s1, int s2, int s3, boolean t0, boolean t1, boolean t2, boolean t3)
@@ -110,7 +108,7 @@ public class BlockInfo
         if (s1 == 0 && !t1) s1 = Math.max(0, c - 1);
         if (s2 == 0 && !t2) s2 = Math.max(0, c - 1);
         if (s3 == 0 && !t3) s3 = Math.max(0, Math.max(s1, s2) - 1);
-        return (float) (c + s1 + s2 + s3) * 0x20 / (4 * 0xFFFF);
+        return (c + s1 + s2 + s3) / (0xF * 4f);
     }
 
     public void updateLightMatrix()
@@ -122,22 +120,28 @@ public class BlockInfo
                 for(int z = 0; z <= 2; z++)
                 {
                     BlockPos pos = blockPos.add(x - 1, y - 1, z - 1);
-                    IBlockState state = world.getBlockState(pos);
-                    t[x][y][z] = state.getLightOpacity(world, pos) < 15;
-                    int brightness = state.getPackedLightmapCoords(world, pos);
-                    s[x][y][z] = (brightness >> 0x14) & 0xF;
-                    b[x][y][z] = (brightness >> 0x04) & 0xF;
-                    ao[x][y][z] = state.getAmbientOcclusionLightValue();
+                    BlockState state = world.getBlockState(pos);
+                    t[x][y][z] = state.getOpacity(world, pos) < 15;
+                    int brightness = WorldRenderer.getCombinedLight(world, pos);
+                    s[x][y][z] = LightTexture.getLightSky(brightness);
+                    b[x][y][z] = LightTexture.getLightBlock(brightness);
+                    ao[x][y][z] = state.getAmbientOcclusionLightValue(world, pos);
                 }
             }
         }
-        for(EnumFacing side : SIDES)
+        for(Direction side : SIDES)
         {
-            if(!state.doesSideBlockRendering(world, blockPos, side))
+            BlockPos pos = blockPos.offset(side);
+            BlockState state = world.getBlockState(pos);
+
+            BlockState thisStateShape = this.state.isSolid() && this.state.isTransparent() ? this.state : Blocks.AIR.getDefaultState();
+            BlockState otherStateShape = state.isSolid() && state.isTransparent() ? state : Blocks.AIR.getDefaultState();
+
+            if(state.getOpacity(world, pos) == 15 || VoxelShapes.faceShapeCovers(thisStateShape.getFaceOcclusionShape(world, blockPos, side), otherStateShape.getFaceOcclusionShape(world, pos, side.getOpposite())))
             {
-                int x = side.getFrontOffsetX() + 1;
-                int y = side.getFrontOffsetY() + 1;
-                int z = side.getFrontOffsetZ() + 1;
+                int x = side.getXOffset() + 1;
+                int y = side.getYOffset() + 1;
+                int z = side.getZOffset() + 1;
                 s[x][y][z] = Math.max(s[1][1][1] - 1, s[x][y][z]);
                 b[x][y][z] = Math.max(b[1][1][1] - 1, b[x][y][z]);
             }
@@ -185,22 +189,22 @@ public class BlockInfo
 
     public void updateFlatLighting()
     {
-        full = state.isFullCube();
-        packed[0] = state.getPackedLightmapCoords(world, blockPos);
+        full = Block.isOpaque(state.getCollisionShape(world, blockPos));
+        packed[0] = WorldRenderer.getCombinedLight(world, blockPos);
 
-        for (EnumFacing side : SIDES)
+        for (Direction side : SIDES)
         {
             int i = side.ordinal() + 1;
-            packed[i] = state.getPackedLightmapCoords(world, blockPos.offset(side));
+            packed[i] = WorldRenderer.getCombinedLight(world, blockPos.offset(side));
         }
     }
 
-    public IBlockAccess getWorld()
+    public IBlockDisplayReader getWorld()
     {
         return world;
     }
 
-    public IBlockState getState()
+    public BlockState getState()
     {
         return state;
     }
@@ -240,19 +244,22 @@ public class BlockInfo
         return full;
     }
 
+    @Deprecated
     public float getShx()
     {
-        return shx;
+        return 0;
     }
 
+    @Deprecated
     public float getShy()
     {
-        return shy;
+        return 0;
     }
 
+    @Deprecated
     public float getShz()
     {
-        return shz;
+        return 0;
     }
 
     public int getCachedTint()

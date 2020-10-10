@@ -6,49 +6,33 @@ import org.bukkit.Material;
 
 /**
  * Represents the different types of steps.
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Step extends TexturedMaterial {
-    private static final List<Material> textures = new ArrayList<>();
-
+    private static final List<Material> textures = new ArrayList<Material>();
     static {
-        textures.add(Material.STONE);
-        textures.add(Material.SANDSTONE);
-        textures.add(Material.WOOD);
-        textures.add(Material.COBBLESTONE);
-        textures.add(Material.BRICK);
-        textures.add(Material.SMOOTH_BRICK);
-        textures.add(Material.NETHER_BRICK);
-        textures.add(Material.QUARTZ_BLOCK);
+        textures.add(Material.LEGACY_STONE);
+        textures.add(Material.LEGACY_SANDSTONE);
+        textures.add(Material.LEGACY_WOOD);
+        textures.add(Material.LEGACY_COBBLESTONE);
+        textures.add(Material.LEGACY_BRICK);
+        textures.add(Material.LEGACY_SMOOTH_BRICK);
+        textures.add(Material.LEGACY_NETHER_BRICK);
+        textures.add(Material.LEGACY_QUARTZ_BLOCK);
     }
 
     public Step() {
-        super(Material.STEP);
-    }
-
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-
-    public Step(final int type) {
-        super(type);
+        super(Material.LEGACY_STEP);
     }
 
     public Step(final Material type) {
-        super((textures.contains(type)) ? Material.STEP : type);
+        super((textures.contains(type)) ? Material.LEGACY_STEP : type);
         if (textures.contains(type)) {
             setMaterial(type);
         }
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-
-    public Step(final int type, final byte data) {
-        super(type, data);
     }
 
     /**
@@ -56,7 +40,7 @@ public class Step extends TexturedMaterial {
      * @param data the raw data value
      * @deprecated Magic value
      */
-
+    @Deprecated
     public Step(final Material type, final byte data) {
         super(type, data);
     }
@@ -90,20 +74,21 @@ public class Step extends TexturedMaterial {
     }
 
     /**
+     * {@inheritDoc}
      *
      * @deprecated Magic value
      */
-
     @Override
     protected int getTextureIndex() {
         return getData() & 0x7;
     }
 
     /**
+     * {@inheritDoc}
      *
      * @deprecated Magic value
      */
-
+    @Deprecated
     @Override
     protected void setTextureIndex(int idx) {
         setData((byte) ((getData() & 0x8) | idx));

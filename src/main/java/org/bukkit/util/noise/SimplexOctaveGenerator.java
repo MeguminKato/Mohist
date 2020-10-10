@@ -2,6 +2,7 @@ package org.bukkit.util.noise;
 
 import java.util.Random;
 import org.bukkit.World;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Creates simplex noise through unbiased octaves
@@ -15,7 +16,7 @@ public class SimplexOctaveGenerator extends OctaveGenerator {
      * @param world World to construct this generator for
      * @param octaves Amount of octaves to create
      */
-    public SimplexOctaveGenerator(World world, int octaves) {
+    public SimplexOctaveGenerator(@NotNull World world, int octaves) {
         this(new Random(world.getSeed()), octaves);
     }
 
@@ -35,18 +36,8 @@ public class SimplexOctaveGenerator extends OctaveGenerator {
      * @param rand Random object to construct this generator for
      * @param octaves Amount of octaves to create
      */
-    public SimplexOctaveGenerator(Random rand, int octaves) {
+    public SimplexOctaveGenerator(@NotNull Random rand, int octaves) {
         super(createOctaves(rand, octaves));
-    }
-
-    private static NoiseGenerator[] createOctaves(Random rand, int octaves) {
-        NoiseGenerator[] result = new NoiseGenerator[octaves];
-
-        for (int i = 0; i < octaves; i++) {
-            result[i] = new SimplexNoiseGenerator(rand);
-        }
-
-        return result;
     }
 
     @Override
@@ -122,6 +113,17 @@ public class SimplexOctaveGenerator extends OctaveGenerator {
 
         if (normalized) {
             result /= max;
+        }
+
+        return result;
+    }
+
+    @NotNull
+    private static NoiseGenerator[] createOctaves(@NotNull Random rand, int octaves) {
+        NoiseGenerator[] result = new NoiseGenerator[octaves];
+
+        for (int i = 0; i < octaves; i++) {
+            result[i] = new SimplexNoiseGenerator(rand);
         }
 
         return result;

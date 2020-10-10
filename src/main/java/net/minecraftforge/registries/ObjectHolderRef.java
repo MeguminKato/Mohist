@@ -20,42 +20,48 @@
 package net.minecraftforge.registries;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Queue;
-import javax.annotation.Nullable;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.FMLLog;
-import net.minecraftforge.fml.common.registry.GameRegistry;
-import net.minecraftforge.fml.common.registry.GameRegistry.ObjectHolder;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
-/**
- * Internal class used in tracking {@link ObjectHolder} references
- */
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.ResourceLocationException;
+
+import javax.annotation.Nullable;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 @SuppressWarnings("rawtypes")
-class ObjectHolderRef
+public class ObjectHolderRef implements Consumer<Predicate<ResourceLocation>>
 {
+    private static final Logger LOGGER  = LogManager.getLogger();
     private Field field;
     private ResourceLocation injectedObject;
     private boolean isValid;
     private ForgeRegistry<?> registry;
 
-    @SuppressWarnings("unchecked")
-    ObjectHolderRef(Field field, ResourceLocation injectedObject, boolean extractFromExistingValues)
+    public ObjectHolderRef(Field field, ResourceLocation injectedObject)
     {
-        registry = getRegistryForType(field);
+        this(field, injectedObject.toString(), false);
+    }
 
+    ObjectHolderRef(Field field, String injectedObject, boolean extractFromExistingValues)
+    {
+        this.registry = getRegistryForType(field);
         this.field = field;
         this.isValid = registry != null;
+
         if (extractFromExistingValues)
         {
             try
             {
                 Object existing = field.get(null);
                 // nothing is ever allowed to replace AIR
-                if (existing == null || existing == registry.getDefault())
+                if (!isValid || (existing == null || existing == registry.getDefault()))
                 {
                     this.injectedObject = null;
                     this.field = null;
@@ -74,20 +80,26 @@ class ObjectHolderRef
         }
         else
         {
-            this.injectedObject = injectedObject;
+            try
+            {
+                this.injectedObject = new ResourceLocation(injectedObject);
+            }
+            catch (ResourceLocationException e)
+            {
+                throw new IllegalArgumentException("Invalid @ObjectHolder annotation on \"" + field.toString() + "\"", e);
+            }
         }
 
         if (this.injectedObject == null || !isValid())
         {
             throw new IllegalStateException(String.format("The ObjectHolder annotation cannot apply to a field that does not map to a registry. Ensure the registry was created during the RegistryEvent.NewRegistry event. (found : %s at %s.%s)", field.getType().getName(), field.getDeclaringClass().getName(), field.getName()));
         }
-        try
+
+        field.setAccessible(true);
+
+        if (Modifier.isFinal(field.getModifiers()))
         {
-            FinalFieldHelper.makeWritable(field);
-        }
-        catch (ReflectiveOperationException e)
-        {
-            throw new RuntimeException(e);
+            throw new RuntimeException("@ObjectHolder on final field, our transformer did not run? " + field.getDeclaringClass().getName() + "/" + field.getName());
         }
     }
 
@@ -105,7 +117,7 @@ class ObjectHolderRef
             Collections.addAll(typesToExamine, type.getInterfaces());
             if (IForgeRegistryEntry.class.isAssignableFrom(type))
             {
-                registry = (ForgeRegistry<?>)GameRegistry.findRegistry((Class<IForgeRegistryEntry>)type);
+                registry = (ForgeRegistry<?>)RegistryManager.ACTIVE.getRegistry((Class<IForgeRegistryEntry>)type);
                 final Class<?> parentType = type.getSuperclass();
                 if (parentType != null)
                 {
@@ -121,8 +133,12 @@ class ObjectHolderRef
         return isValid;
     }
 
-    public void apply()
+    @Override
+    public void accept(Predicate<ResourceLocation> filter)
     {
+        if (registry == null || !filter.test(registry.getRegistryName()))
+            return;
+
         Object thing;
         if (isValid && registry.containsKey(injectedObject) && !registry.isDummied(injectedObject))
         {
@@ -135,46 +151,31 @@ class ObjectHolderRef
 
         if (thing == null)
         {
-            FMLLog.log.debug("Unable to lookup {} for {}. This means the object wasn't registered. It's likely just mod options.", injectedObject, field);
+            LOGGER.debug("Unable to lookup {} for {}. This means the object wasn't registered. It's likely just mod options.", injectedObject, field);
             return;
         }
         try
         {
-            FinalFieldHelper.setField(field, null, thing);
+            field.set(null, thing);
         }
         catch (IllegalArgumentException | ReflectiveOperationException e)
         {
-            FMLLog.log.warn("Unable to set {} with value {} ({})", this.field, thing, this.injectedObject, e);
+            LOGGER.warn("Unable to set {} with value {} ({})", this.field, thing, this.injectedObject, e);
         }
     }
 
-    private static class FinalFieldHelper
+    @Override
+    public int hashCode()
     {
-        private static Field modifiersField;
-        private static Object reflectionFactory;
-        private static Method newFieldAccessor;
-        private static Method fieldAccessorSet;
+        return field.hashCode();
+    }
 
-        static Field makeWritable(Field f) throws ReflectiveOperationException
-        {
-            f.setAccessible(true);
-            if (modifiersField == null)
-            {
-                Method getReflectionFactory = Class.forName("sun.reflect.ReflectionFactory").getDeclaredMethod("getReflectionFactory");
-                reflectionFactory = getReflectionFactory.invoke(null);
-                newFieldAccessor = Class.forName("sun.reflect.ReflectionFactory").getDeclaredMethod("newFieldAccessor", Field.class, boolean.class);
-                fieldAccessorSet = Class.forName("sun.reflect.FieldAccessor").getDeclaredMethod("set", Object.class, Object.class);
-                modifiersField = Field.class.getDeclaredField("modifiers");
-                modifiersField.setAccessible(true);
-            }
-            modifiersField.setInt(f, f.getModifiers() & ~Modifier.FINAL);
-            return f;
-        }
-
-        static void setField(Field field, @Nullable Object instance, Object thing) throws ReflectiveOperationException
-        {
-            Object fieldAccessor = newFieldAccessor.invoke(reflectionFactory, field, false);
-            fieldAccessorSet.invoke(fieldAccessor, instance, thing);
-        }
+    @Override
+    public boolean equals(Object other)
+    {
+        if (!(other instanceof ObjectHolderRef))
+            return false;
+        ObjectHolderRef o = (ObjectHolderRef)other;
+        return this.field.equals(o.field);
     }
 }

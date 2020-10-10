@@ -54,6 +54,10 @@ public enum ClickType {
      */
     CREATIVE,
     /**
+     * The "swap item with offhand" key (defaults to F).
+     */
+    SWAP_OFFHAND,
+    /**
      * A type of inventory manipulation not yet recognized by Bukkit.
      * <p>
      * This is only for transitional purposes on a new Minecraft update, and
@@ -61,7 +65,8 @@ public enum ClickType {
      * <p>
      * Any ClickType.UNKNOWN is called on a best-effort basis.
      */
-    UNKNOWN,;
+    UNKNOWN,
+    ;
 
     /**
      * Gets whether this ClickType represents the pressing of a key on a

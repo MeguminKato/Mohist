@@ -19,33 +19,66 @@
 
 package net.minecraftforge.client.event;
 
-import net.minecraft.client.renderer.RenderGlobal;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
-import net.minecraftforge.fml.common.eventhandler.Event;
+import javax.annotation.Nonnull;
+
+import com.mojang.blaze3d.matrix.MatrixStack;
+
+import net.minecraft.client.renderer.IRenderTypeBuffer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.Hand;
+import net.minecraftforge.eventbus.api.Cancelable;
+import net.minecraftforge.eventbus.api.Event;
 
 /**
- * This event is fired on {@link net.minecraftforge.common.MinecraftForge#EVENT_BUS}
- * before both hands are rendered.
- * Canceling this event prevents either hand from being rendered,
- * and prevents {@link RenderSpecificHandEvent} from firing.
- * TODO This may get merged in 11 with RenderSpecificHandEvent to make a generic hand rendering
+ * This event is fired on the {@link net.minecraftforge.common.MinecraftForge#EVENT_BUS}
+ * whenever a hand is rendered in first person.
+ * Canceling the event causes the hand to not render.
  */
 @Cancelable
 public class RenderHandEvent extends Event
 {
-    private final RenderGlobal context;
+    private final Hand hand;
+    private final MatrixStack mat;
+    private final IRenderTypeBuffer buffers;
+    private final int light;
     private final float partialTicks;
-    private final int renderPass;
-    public RenderHandEvent(RenderGlobal context, float partialTicks, int renderPass)
+    private final float interpolatedPitch;
+    private final float swingProgress;
+    private final float equipProgress;
+    @Nonnull
+    private final ItemStack stack;
+
+    public RenderHandEvent(Hand hand, MatrixStack mat, IRenderTypeBuffer buffers, int light,
+                           float partialTicks, float interpolatedPitch,
+                           float swingProgress, float equipProgress, @Nonnull ItemStack stack)
     {
-        this.context = context;
+        this.hand = hand;
+        this.mat = mat;
+        this.buffers = buffers;
+        this.light = light;
         this.partialTicks = partialTicks;
-        this.renderPass = renderPass;
+        this.interpolatedPitch = interpolatedPitch;
+        this.swingProgress = swingProgress;
+        this.equipProgress = equipProgress;
+        this.stack = stack;
     }
 
-    public RenderGlobal getContext()
+    public Hand getHand()
     {
-        return context;
+        return hand;
+    }
+
+    public MatrixStack getMatrixStack()
+    {
+        return mat;
+    }
+
+    public IRenderTypeBuffer getBuffers() {
+        return buffers;
+    }
+
+    public int getLight() {
+        return light;
     }
 
     public float getPartialTicks()
@@ -53,8 +86,36 @@ public class RenderHandEvent extends Event
         return partialTicks;
     }
 
-    public int getRenderPass()
+    /**
+     * @return The interpolated pitch of the player entity
+     */
+    public float getInterpolatedPitch()
     {
-        return renderPass;
+        return interpolatedPitch;
+    }
+
+    /**
+     * @return The swing progress of the hand being rendered
+     */
+    public float getSwingProgress()
+    {
+        return swingProgress;
+    }
+
+    /**
+     * @return The progress of the equip animation. 1.0 is fully equipped.
+     */
+    public float getEquipProgress()
+    {
+        return equipProgress;
+    }
+
+    /**
+     * @return The ItemStack to be rendered
+     */
+    @Nonnull
+    public ItemStack getItemStack()
+    {
+        return stack;
     }
 }

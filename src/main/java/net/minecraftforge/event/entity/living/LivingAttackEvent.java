@@ -19,12 +19,11 @@
 
 package net.minecraftforge.event.entity.living;
 
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.DamageSource;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
+import net.minecraftforge.eventbus.api.Cancelable;
+import net.minecraft.util.DamageSource;
+import net.minecraft.entity.LivingEntity;
 
 /**
  * LivingAttackEvent is fired when a living Entity is attacked. <br>
@@ -37,7 +36,7 @@ import net.minecraftforge.fml.common.eventhandler.Cancelable;
  * {@link #source} contains the DamageSource of the attack. <br>
  * {@link #amount} contains the amount of damage dealt to the entity. <br>
  * <br>
- * This event is {@link Cancelable}.<br>
+ * This event is {@link net.minecraftforge.eventbus.api.Cancelable}.<br>
  * If this event is canceled, the Entity does not take attack damage.<br>
  * <br>
  * This event does not have a result. {@link HasResult}<br>
@@ -49,7 +48,7 @@ public class LivingAttackEvent extends LivingEvent
 {
     private final DamageSource source;
     private final float amount;
-    public LivingAttackEvent(EntityLivingBase entity, DamageSource source, float amount)
+    public LivingAttackEvent(LivingEntity entity, DamageSource source, float amount)
     {
         super(entity);
         this.source = source;

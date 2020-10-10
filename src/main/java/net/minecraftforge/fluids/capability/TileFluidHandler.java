@@ -19,47 +19,51 @@
 
 package net.minecraftforge.fluids.capability;
 
+import net.minecraft.block.BlockState;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.tileentity.TileEntityType;
+import net.minecraft.util.Direction;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.FluidAttributes;
+import net.minecraftforge.fluids.capability.templates.FluidTank;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidTank;
 
 public class TileFluidHandler extends TileEntity
 {
-    protected FluidTank tank = new FluidTank(Fluid.BUCKET_VOLUME);
+    protected FluidTank tank = new FluidTank(FluidAttributes.BUCKET_VOLUME);
+    
+    private final LazyOptional<IFluidHandler> holder = LazyOptional.of(() -> tank);
+
+    public TileFluidHandler(@Nonnull TileEntityType<?> tileEntityTypeIn)
+    {
+        super(tileEntityTypeIn);
+    }
 
     @Override
-    public void readFromNBT(NBTTagCompound tag)
+    public void func_230337_a_(BlockState state, CompoundNBT tag)
     {
-        super.readFromNBT(tag);
+        super.func_230337_a_(state, tag);
         tank.readFromNBT(tag);
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound tag)
+    public CompoundNBT write(CompoundNBT tag)
     {
-        tag = super.writeToNBT(tag);
+        tag = super.write(tag);
         tank.writeToNBT(tag);
         return tag;
     }
 
     @Override
-    public boolean hasCapability(@Nonnull Capability<?> capability, @Nullable EnumFacing facing)
-    {
-        return capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY || super.hasCapability(capability, facing);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    @Nullable
-    public <T> T getCapability(@Nonnull Capability<T> capability, @Nullable EnumFacing facing)
+    @Nonnull
+    public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> capability, @Nullable Direction facing)
     {
         if (capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY)
-            return (T) tank;
+            return holder.cast();
         return super.getCapability(capability, facing);
     }
 }

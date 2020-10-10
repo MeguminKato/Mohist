@@ -20,17 +20,18 @@
 package net.minecraftforge.event.entity.player;
 
 import com.google.common.base.Preconditions;
-import java.util.List;
-import javax.annotation.Nonnegative;
-import net.minecraft.entity.projectile.EntityFishHook;
+import net.minecraft.entity.projectile.FishingBobberEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
+import net.minecraftforge.eventbus.api.Cancelable;
+
+import javax.annotation.Nonnegative;
+import java.util.List;
 
 /**
  * This event is called when a player fishes an item.
  *
- * This event is {@link net.minecraftforge.fml.common.eventhandler.Cancelable}
+ * This event is {@link net.minecraftforge.eventbus.api.Cancelable}
  * Canceling the event will cause the player to receive no items at all.
  * The hook will still take the damage specified
  */
@@ -38,12 +39,12 @@ import net.minecraftforge.fml.common.eventhandler.Cancelable;
 public class ItemFishedEvent extends PlayerEvent
 {
     private final NonNullList<ItemStack> stacks = NonNullList.create();
-    private final EntityFishHook hook;
+    private final FishingBobberEntity hook;
     private int rodDamage;
 
-    public ItemFishedEvent(List<ItemStack> stacks, int rodDamage, EntityFishHook hook)
+    public ItemFishedEvent(List<ItemStack> stacks, int rodDamage, FishingBobberEntity hook)
     {
-        super(hook.getAngler());
+        super(hook.func_234606_i_());
         this.stacks.addAll(stacks);
         this.rodDamage = rodDamage;
         this.hook = hook;
@@ -82,7 +83,7 @@ public class ItemFishedEvent extends PlayerEvent
     /**
      * Use this to stuff related to the hook itself, like the position of the bobber.
      */
-    public EntityFishHook getHookEntity()
+    public FishingBobberEntity getHookEntity()
     {
         return hook;
     }

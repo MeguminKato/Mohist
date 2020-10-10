@@ -1,4 +1,7 @@
+
 package org.bukkit.command;
+
+import org.jetbrains.annotations.NotNull;
 
 public interface ProxiedCommandSender extends CommandSender {
 
@@ -7,6 +10,7 @@ public interface ProxiedCommandSender extends CommandSender {
      *
      * @return the caller which triggered the command
      */
+    @NotNull
     CommandSender getCaller();
 
     /**
@@ -14,6 +18,7 @@ public interface ProxiedCommandSender extends CommandSender {
      *
      * @return the caller which the command is being run as
      */
+    @NotNull
     CommandSender getCallee();
 
 }

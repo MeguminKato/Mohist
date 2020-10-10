@@ -19,17 +19,6 @@
 
 package net.minecraftforge.client.model.animation;
 
-import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import com.google.common.collect.UnmodifiableIterator;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonParseException;
-import com.google.gson.annotations.SerializedName;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -41,31 +30,48 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.TreeMap;
+
 import javax.annotation.Nullable;
-import javax.vecmath.AxisAngle4f;
-import javax.vecmath.Matrix4f;
-import javax.vecmath.Quat4f;
-import javax.vecmath.Vector3f;
-import net.minecraft.client.renderer.block.model.BlockPart;
-import net.minecraft.client.resources.IResource;
-import net.minecraft.client.resources.IResourceManager;
+
+import net.minecraft.client.renderer.model.IModelTransform;
+import net.minecraft.util.math.vector.Matrix4f;
+import net.minecraft.util.math.vector.Quaternion;
+import net.minecraft.util.math.vector.TransformationMatrix;
+import net.minecraft.util.math.vector.Vector3f;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import net.minecraft.client.renderer.model.BlockPart;
+import net.minecraft.resources.IResource;
+import net.minecraft.resources.IResourceManager;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.client.model.animation.ModelBlockAnimation.Parameter.Interpolation;
 import net.minecraftforge.client.model.animation.ModelBlockAnimation.Parameter.Type;
 import net.minecraftforge.client.model.animation.ModelBlockAnimation.Parameter.Variable;
 import net.minecraftforge.common.animation.Event;
-import net.minecraftforge.common.model.IModelState;
-import net.minecraftforge.common.model.TRSRTransformation;
 import net.minecraftforge.common.model.animation.IClip;
 import net.minecraftforge.common.model.animation.IJoint;
 import net.minecraftforge.common.model.animation.IJointClip;
 import net.minecraftforge.common.model.animation.JointClips;
 import net.minecraftforge.common.util.JsonUtils;
-import net.minecraftforge.fml.common.FMLLog;
+
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.collect.UnmodifiableIterator;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParseException;
+import com.google.gson.annotations.SerializedName;
 
 public class ModelBlockAnimation
 {
+    private static final Logger LOGGER = LogManager.getLogger();
+
     private final ImmutableMap<String, ImmutableMap<String, float[]>> joints;
     private final ImmutableMap<String, MBClip> clips;
     private transient ImmutableMultimap<Integer, MBJointWeight> jointIndexMap;
@@ -320,13 +326,14 @@ public class ModelBlockAnimation
             }
 
             @Override
-            public TRSRTransformation apply(float time)
+            public TransformationMatrix apply(float time)
             {
                 time -= Math.floor(time);
                 Vector3f translation = new Vector3f(0, 0, 0);
                 Vector3f scale = new Vector3f(1, 1, 1);
                 Vector3f origin = new Vector3f(0, 0, 0);
-                AxisAngle4f rotation = new AxisAngle4f(0, 0, 0, 0);
+                Vector3f rotation_axis = new Vector3f(0, 0, 0);
+                float rotation_angle = 0;
                 for(MBVariableClip var : variables)
                 {
                     int length = loop ? var.samples.length : (var.samples.length - 1);
@@ -358,56 +365,55 @@ public class ModelBlockAnimation
                     switch(var.variable)
                     {
                         case X:
-                            translation.x = value;
+                            translation.setX(value);
                             break;
                         case Y:
-                            translation.y = value;
+                            translation.setY(value);
                             break;
                         case Z:
-                            translation.z = value;
+                            translation.setZ(value);
                             break;
                         case XROT:
-                            rotation.x = value;
+                            rotation_axis.setX(value);
                             break;
                         case YROT:
-                            rotation.y = value;
+                            rotation_axis.setY(value);
                             break;
                         case ZROT:
-                            rotation.z = value;
+                            rotation_axis.setZ(value);
                             break;
                         case ANGLE:
-                            rotation.angle = (float)Math.toRadians(value);
+                            rotation_angle = (float)Math.toRadians(value);
                             break;
                         case SCALE:
-                            scale.x = scale.y = scale.z = value;
+                            scale.set(value, value, value);
                             break;
                         case XS:
-                            scale.x = value;
+                            scale.setX(value);
                             break;
                         case YS:
-                            scale.y = value;
+                            scale.setY(value);
                             break;
                         case ZS:
-                            scale.z = value;
+                            scale.setX(value);
                             break;
                         case XORIGIN:
-                            origin.x = value - 0.5F;
+                            origin.setX(value - 0.5F);
                             break;
                         case YORIGIN:
-                            origin.y = value - 0.5F;
+                            origin.setY(value - 0.5F);
                             break;
                         case ZORIGIN:
-                            origin.z = value - 0.5F;
+                            origin.setX(value - 0.5F);
                             break;
                     }
                 }
-                Quat4f rot = new Quat4f();
-                rot.set(rotation);
-                TRSRTransformation base = new TRSRTransformation(translation, rot, scale, null);
-                Vector3f negOrigin = new Vector3f(origin);
-                negOrigin.negate();
-                base = new TRSRTransformation(origin, null, null, null).compose(base).compose(new TRSRTransformation(negOrigin, null, null, null));
-                return TRSRTransformation.blockCenterToCorner(base);
+                Quaternion rot = new Quaternion(rotation_axis, rotation_angle, false);
+                TransformationMatrix base = new TransformationMatrix(translation, rot, scale, null);
+                Vector3f negOrigin = origin.copy();
+                negOrigin.mul(-1,-1,-1);
+                base = new TransformationMatrix(origin, null, null, null).compose(base).compose(new TransformationMatrix(negOrigin, null, null, null));
+                return base.blockCenterToCorner();
             }
         }
     }
@@ -422,9 +428,9 @@ public class ModelBlockAnimation
         }
 
         @Override
-        public TRSRTransformation getInvBindPose()
+        public TransformationMatrix getInvBindPose()
         {
-            return TRSRTransformation.identity();
+            return TransformationMatrix.identity();
         }
 
         @Override
@@ -511,7 +517,13 @@ public class ModelBlockAnimation
     }
 
     @Nullable
-    public TRSRTransformation getPartTransform(IModelState state, BlockPart part, int i)
+    public TransformationMatrix getPartTransform(IModelTransform state, BlockPart part, int i)
+    {
+        return getPartTransform(state, i);
+    }
+
+    @Nullable
+    public TransformationMatrix getPartTransform(IModelTransform state, int i)
     {
         ImmutableCollection<MBJointWeight> infos = getJoint(i);
         if(!infos.isEmpty())
@@ -523,11 +535,11 @@ public class ModelBlockAnimation
                 if(info.getWeights().containsKey(i))
                 {
                     ModelBlockAnimation.MBJoint joint = new ModelBlockAnimation.MBJoint(info.getName());
-                    Optional<TRSRTransformation> trOp = state.apply(Optional.of(joint));
-                    if(trOp.isPresent() && !trOp.get().isIdentity())
+                    TransformationMatrix trOp = state.getPartTransformation(joint);
+                    if(!trOp.isIdentity())
                     {
                         float w = info.getWeights().get(i)[0];
-                        tmp = trOp.get().getMatrix();
+                        tmp = trOp.getMatrix();
                         tmp.mul(w);
                         m.add(tmp);
                         weight += w;
@@ -537,7 +549,7 @@ public class ModelBlockAnimation
             if(weight > 1e-5)
             {
                 m.mul(1f / weight);
-                return new TRSRTransformation(m);
+                return new TransformationMatrix(m);
             }
         }
         return null;
@@ -564,7 +576,7 @@ public class ModelBlockAnimation
         }
         catch(IOException | JsonParseException e)
         {
-            FMLLog.log.error("Exception loading vanilla model animation {}, skipping", armatureLocation, e);
+            LOGGER.error("Exception loading vanilla model animation {}, skipping", armatureLocation, e);
             return defaultModelBlockAnimation;
         }
     }

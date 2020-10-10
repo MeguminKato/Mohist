@@ -20,16 +20,21 @@
 package net.minecraftforge.client.model.pipeline;
 
 import java.util.List;
-import net.minecraft.block.state.IBlockState;
+import java.util.Random;
+
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.IVertexBuilder;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.renderer.BlockModelRenderer;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.block.model.IBakedModel;
+import net.minecraft.client.renderer.model.BakedQuad;
+import net.minecraft.client.renderer.model.IBakedModel;
 import net.minecraft.client.renderer.color.BlockColors;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockAccess;
-import net.minecraftforge.common.ForgeModContainer;
+import net.minecraft.world.IBlockDisplayReader;
+import net.minecraftforge.client.model.data.IModelData;
+import net.minecraftforge.common.ForgeConfig;
 
 public class ForgeBlockModelRenderer extends BlockModelRenderer
 {
@@ -46,52 +51,53 @@ public class ForgeBlockModelRenderer extends BlockModelRenderer
     }
 
     @Override
-    public boolean renderModelFlat(IBlockAccess world, IBakedModel model, IBlockState state, BlockPos pos, BufferBuilder buffer, boolean checkSides, long rand)
+    public boolean renderModelFlat(IBlockDisplayReader world, IBakedModel model, BlockState state, BlockPos pos, MatrixStack matrixStack, IVertexBuilder buffer, boolean checkSides, Random rand, long seed, int combinedOverlayIn, IModelData modelData)
     {
-        if(ForgeModContainer.forgeLightPipelineEnabled)
+        if(ForgeConfig.CLIENT.experimentalForgeLightPipelineEnabled.get())
         {
             VertexBufferConsumer consumer = consumerFlat.get();
             consumer.setBuffer(buffer);
-            consumer.setOffset(pos);
 
             VertexLighterFlat lighter = lighterFlat.get();
             lighter.setParent(consumer);
+            lighter.setTransform(matrixStack.getLast());
 
-            return render(lighter, world, model, state, pos, buffer, checkSides, rand);
+            return render(lighter, world, model, state, pos, matrixStack, checkSides, rand, seed, modelData);
         }
         else
         {
-            return super.renderModelFlat(world, model, state, pos, buffer, checkSides, rand);
+            return super.renderModelFlat(world, model, state, pos, matrixStack, buffer, checkSides, rand, seed, combinedOverlayIn, modelData);
         }
     }
 
     @Override
-    public boolean renderModelSmooth(IBlockAccess world, IBakedModel model, IBlockState state, BlockPos pos, BufferBuilder buffer, boolean checkSides, long rand)
+    public boolean renderModelSmooth(IBlockDisplayReader world, IBakedModel model, BlockState state, BlockPos pos, MatrixStack matrixStack, IVertexBuilder buffer, boolean checkSides, Random rand, long seed, int combinedOverlayIn, IModelData modelData)
     {
-        if(ForgeModContainer.forgeLightPipelineEnabled)
+        if(ForgeConfig.CLIENT.experimentalForgeLightPipelineEnabled.get())
         {
             VertexBufferConsumer consumer = consumerSmooth.get();
             consumer.setBuffer(buffer);
-            consumer.setOffset(pos);
 
             VertexLighterSmoothAo lighter = lighterSmooth.get();
             lighter.setParent(consumer);
+            lighter.setTransform(matrixStack.getLast());
 
-            return render(lighter, world, model, state, pos, buffer, checkSides, rand);
+            return render(lighter, world, model, state, pos, matrixStack, checkSides, rand, seed, modelData);
         }
         else
         {
-            return super.renderModelSmooth(world, model, state, pos, buffer, checkSides, rand);
+            return super.renderModelSmooth(world, model, state, pos, matrixStack, buffer, checkSides, rand, seed, combinedOverlayIn, modelData);
         }
     }
 
-    public static boolean render(VertexLighterFlat lighter, IBlockAccess world, IBakedModel model, IBlockState state, BlockPos pos, BufferBuilder wr, boolean checkSides, long rand)
+    public static boolean render(VertexLighterFlat lighter, IBlockDisplayReader world, IBakedModel model, BlockState state, BlockPos pos, MatrixStack matrixStack, boolean checkSides, Random rand, long seed, IModelData modelData)
     {
         lighter.setWorld(world);
         lighter.setState(state);
         lighter.setBlockPos(pos);
         boolean empty = true;
-        List<BakedQuad> quads = model.getQuads(state, null, rand);
+        rand.setSeed(seed);
+        List<BakedQuad> quads = model.getQuads(state, null, rand, modelData);
         if(!quads.isEmpty())
         {
             lighter.updateBlockInfo();
@@ -101,12 +107,13 @@ public class ForgeBlockModelRenderer extends BlockModelRenderer
                 quad.pipe(lighter);
             }
         }
-        for(EnumFacing side : EnumFacing.values())
+        for(Direction side : Direction.values())
         {
-            quads = model.getQuads(state, side, rand);
+            rand.setSeed(seed);
+            quads = model.getQuads(state, side, rand, modelData);
             if(!quads.isEmpty())
             {
-                if(!checkSides || state.shouldSideBeRendered(world, pos, side))
+                if(!checkSides || Block.shouldSideBeRendered(state, world, pos, side))
                 {
                     if(empty) lighter.updateBlockInfo();
                     empty = false;

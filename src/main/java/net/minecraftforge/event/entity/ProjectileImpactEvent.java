@@ -20,13 +20,14 @@
 package net.minecraftforge.event.entity;
 
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.projectile.EntityArrow;
-import net.minecraft.entity.projectile.EntityFireball;
-import net.minecraft.entity.projectile.EntityThrowable;
+import net.minecraft.entity.projectile.AbstractArrowEntity;
+import net.minecraft.entity.projectile.DamagingProjectileEntity;
+import net.minecraft.entity.projectile.FireworkRocketEntity;
+import net.minecraft.entity.projectile.ThrowableEntity;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.ForgeEventFactory;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
+import net.minecraftforge.eventbus.api.Cancelable;
 
 /**
  * This event is fired when a projectile entity impacts something.
@@ -57,15 +58,15 @@ public class ProjectileImpactEvent extends EntityEvent
     @Cancelable
     public static class Arrow extends ProjectileImpactEvent
     {
-        private final EntityArrow arrow;
+        private final AbstractArrowEntity arrow;
 
-        public Arrow(EntityArrow arrow, RayTraceResult ray)
+        public Arrow(AbstractArrowEntity arrow, RayTraceResult ray)
         {
             super(arrow, ray);
             this.arrow = arrow;
         }
 
-        public EntityArrow getArrow()
+        public AbstractArrowEntity getArrow()
         {
             return arrow;
         }
@@ -74,15 +75,15 @@ public class ProjectileImpactEvent extends EntityEvent
     @Cancelable
     public static class Fireball extends ProjectileImpactEvent
     {
-        private final EntityFireball fireball;
+        private final DamagingProjectileEntity fireball;
 
-        public Fireball(EntityFireball fireball, RayTraceResult ray)
+        public Fireball(DamagingProjectileEntity fireball, RayTraceResult ray)
         {
             super(fireball, ray);
             this.fireball = fireball;
         }
 
-        public EntityFireball getFireball()
+        public DamagingProjectileEntity getFireball()
         {
             return fireball;
         }
@@ -91,17 +92,37 @@ public class ProjectileImpactEvent extends EntityEvent
     @Cancelable
     public static class Throwable extends ProjectileImpactEvent
     {
-        private final EntityThrowable throwable;
+        private final ThrowableEntity throwable;
 
-        public Throwable(EntityThrowable throwable, RayTraceResult ray)
+        public Throwable(ThrowableEntity throwable, RayTraceResult ray)
         {
             super(throwable, ray);
             this.throwable = throwable;
         }
 
-        public EntityThrowable getThrowable()
+        public ThrowableEntity getThrowable()
         {
             return throwable;
+        }
+    }
+
+    /**
+     * Event is cancellable, causes firework to ignore the current hit and continue on its journey.
+     */
+    @Cancelable
+    public static class FireworkRocket extends ProjectileImpactEvent
+    {
+        private final FireworkRocketEntity fireworkRocket;
+
+        public FireworkRocket(FireworkRocketEntity fireworkRocket, RayTraceResult ray)
+        {
+            super(fireworkRocket, ray);
+            this.fireworkRocket = fireworkRocket;
+        }
+
+        public FireworkRocketEntity getFireworkRocket()
+        {
+            return fireworkRocket;
         }
     }
 }

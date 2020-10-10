@@ -5,15 +5,18 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Map;
+import java.util.logging.Level;
 import org.apache.commons.lang.Validate;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
+import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 import org.yaml.snakeyaml.representer.Representer;
-import com.mohistmc.MohistMC;
 
 /**
  * An implementation of {@link Configuration} which saves all files in Yaml.
@@ -23,62 +26,11 @@ public class YamlConfiguration extends FileConfiguration {
     protected static final String COMMENT_PREFIX = "# ";
     protected static final String BLANK_CONFIG = "{}\n";
     private final DumperOptions yamlOptions = new DumperOptions();
+    private final LoaderOptions loaderOptions = new LoaderOptions();
     private final Representer yamlRepresenter = new YamlRepresenter();
-    private final Yaml yaml = new Yaml(new YamlConstructor(), yamlRepresenter, yamlOptions);
+    private final Yaml yaml = new Yaml(new YamlConstructor(), yamlRepresenter, yamlOptions, loaderOptions);
 
-    /**
-     * Creates a new {@link YamlConfiguration}, loading from the given file.
-     * <p>
-     * Any errors loading the Configuration will be logged and then ignored.
-     * If the specified input is not a valid config, a blank config will be
-     * returned.
-     * <p>
-     * The encoding used may follow the system dependent default.
-     *
-     * @param file Input file
-     * @return Resulting configuration
-     * @throws IllegalArgumentException Thrown if file is null
-     */
-    public static YamlConfiguration loadConfiguration(File file) {
-        Validate.notNull(file, "File cannot be null");
-
-        YamlConfiguration config = new YamlConfiguration();
-
-        try {
-            config.load(file);
-        } catch (FileNotFoundException ex) {
-        } catch (IOException | InvalidConfigurationException ex) {
-            MohistMC.LOGGER.error("Cannot load " + file, ex);
-        }
-
-        return config;
-    }
-
-    /**
-     * Creates a new {@link YamlConfiguration}, loading from the given reader.
-     * <p>
-     * Any errors loading the Configuration will be logged and then ignored.
-     * If the specified input is not a valid config, a blank config will be
-     * returned.
-     *
-     * @param reader input
-     * @return resulting configuration
-     * @throws IllegalArgumentException Thrown if stream is null
-     */
-    public static YamlConfiguration loadConfiguration(Reader reader) {
-        Validate.notNull(reader, "Stream cannot be null");
-
-        YamlConfiguration config = new YamlConfiguration();
-
-        try {
-            config.load(reader);
-        } catch (IOException | InvalidConfigurationException ex) {
-            MohistMC.LOGGER.error("Cannot load configuration from stream", ex);
-        }
-
-        return config;
-    }
-
+    @NotNull
     @Override
     public String saveToString() {
         yamlOptions.setIndent(options().indent());
@@ -96,11 +48,12 @@ public class YamlConfiguration extends FileConfiguration {
     }
 
     @Override
-    public void loadFromString(String contents) throws InvalidConfigurationException {
+    public void loadFromString(@NotNull String contents) throws InvalidConfigurationException {
         Validate.notNull(contents, "Contents cannot be null");
 
         Map<?, ?> input;
         try {
+            loaderOptions.setMaxAliasesForCollections(Integer.MAX_VALUE); // SPIGOT-5881: Not ideal, but was default pre SnakeYAML 1.26
             input = (Map<?, ?>) yaml.load(contents);
         } catch (YAMLException e) {
             throw new InvalidConfigurationException(e);
@@ -118,7 +71,7 @@ public class YamlConfiguration extends FileConfiguration {
         }
     }
 
-    protected void convertMapsToSections(Map<?, ?> input, ConfigurationSection section) {
+    protected void convertMapsToSections(@NotNull Map<?, ?> input, @NotNull ConfigurationSection section) {
         for (Map.Entry<?, ?> entry : input.entrySet()) {
             String key = entry.getKey().toString();
             Object value = entry.getValue();
@@ -131,7 +84,8 @@ public class YamlConfiguration extends FileConfiguration {
         }
     }
 
-    protected String parseHeader(String input) {
+    @NotNull
+    protected String parseHeader(@NotNull String input) {
         String[] lines = input.split("\r?\n", -1);
         StringBuilder result = new StringBuilder();
         boolean readingHeader = true;
@@ -160,6 +114,7 @@ public class YamlConfiguration extends FileConfiguration {
         return result.toString();
     }
 
+    @NotNull
     @Override
     protected String buildHeader() {
         String header = options().header();
@@ -198,6 +153,7 @@ public class YamlConfiguration extends FileConfiguration {
         return builder.toString();
     }
 
+    @NotNull
     @Override
     public YamlConfigurationOptions options() {
         if (options == null) {
@@ -205,5 +161,64 @@ public class YamlConfiguration extends FileConfiguration {
         }
 
         return (YamlConfigurationOptions) options;
+    }
+
+    /**
+     * Creates a new {@link YamlConfiguration}, loading from the given file.
+     * <p>
+     * Any errors loading the Configuration will be logged and then ignored.
+     * If the specified input is not a valid config, a blank config will be
+     * returned.
+     * <p>
+     * The encoding used may follow the system dependent default.
+     *
+     * @param file Input file
+     * @return Resulting configuration
+     * @throws IllegalArgumentException Thrown if file is null
+     */
+    @NotNull
+    public static YamlConfiguration loadConfiguration(@NotNull File file) {
+        Validate.notNull(file, "File cannot be null");
+
+        YamlConfiguration config = new YamlConfiguration();
+
+        try {
+            config.load(file);
+        } catch (FileNotFoundException ex) {
+        } catch (IOException ex) {
+            Bukkit.getLogger().log(Level.SEVERE, "Cannot load " + file, ex);
+        } catch (InvalidConfigurationException ex) {
+            Bukkit.getLogger().log(Level.SEVERE, "Cannot load " + file, ex);
+        }
+
+        return config;
+    }
+
+    /**
+     * Creates a new {@link YamlConfiguration}, loading from the given reader.
+     * <p>
+     * Any errors loading the Configuration will be logged and then ignored.
+     * If the specified input is not a valid config, a blank config will be
+     * returned.
+     *
+     * @param reader input
+     * @return resulting configuration
+     * @throws IllegalArgumentException Thrown if stream is null
+     */
+    @NotNull
+    public static YamlConfiguration loadConfiguration(@NotNull Reader reader) {
+        Validate.notNull(reader, "Stream cannot be null");
+
+        YamlConfiguration config = new YamlConfiguration();
+
+        try {
+            config.load(reader);
+        } catch (IOException ex) {
+            Bukkit.getLogger().log(Level.SEVERE, "Cannot load configuration from stream", ex);
+        } catch (InvalidConfigurationException ex) {
+            Bukkit.getLogger().log(Level.SEVERE, "Cannot load configuration from stream", ex);
+        }
+
+        return config;
     }
 }

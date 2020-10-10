@@ -6,6 +6,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * This designates the warning state for a specific item.
@@ -16,21 +18,6 @@ import java.util.Map;
 @Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Warning {
-
-    /**
-     * This sets if the deprecation warnings when registering events gets
-     * printed when the setting is in the default state.
-     *
-     * @return false normally, or true to encourage warning printout
-     */
-    boolean value() default false;
-
-    /**
-     * This can provide detailed information on why the event is deprecated.
-     *
-     * @return The reason an event is deprecated
-     */
-    String reason() default "";
 
     /**
      * This represents the states that server verbose for warnings may be.
@@ -68,25 +55,6 @@ public @interface Warning {
                 .build();
 
         /**
-         * This method returns the corresponding warning state for the given
-         * string value.
-         *
-         * @param value The string value to check
-         * @return {@link #DEFAULT} if not found, or the respective
-         *     WarningState
-         */
-        public static WarningState value(final String value) {
-            if (value == null) {
-                return DEFAULT;
-            }
-            WarningState state = values.get(value.toLowerCase());
-            if (state == null) {
-                return DEFAULT;
-            }
-            return state;
-        }
-
-        /**
          * This method checks the provided warning should be printed for this
          * state
          *
@@ -98,11 +66,46 @@ public @interface Warning {
          *     specifies false for {@link Warning#value()}, true otherwise.
          *     </ul>
          */
-        public boolean printFor(Warning warning) {
+        public boolean printFor(@Nullable Warning warning) {
             if (this == DEFAULT) {
                 return warning == null || warning.value();
             }
             return this == ON;
         }
+
+        /**
+         * This method returns the corresponding warning state for the given
+         * string value.
+         *
+         * @param value The string value to check
+         * @return {@link #DEFAULT} if not found, or the respective
+         *     WarningState
+         */
+        @NotNull
+        public static WarningState value(@Nullable final String value) {
+            if (value == null) {
+                return DEFAULT;
+            }
+            WarningState state = values.get(value.toLowerCase());
+            if (state == null) {
+                return DEFAULT;
+            }
+            return state;
+        }
     }
+
+    /**
+     * This sets if the deprecation warnings when registering events gets
+     * printed when the setting is in the default state.
+     *
+     * @return false normally, or true to encourage warning printout
+     */
+    boolean value() default false;
+
+    /**
+     * This can provide detailed information on why the event is deprecated.
+     *
+     * @return The reason an event is deprecated
+     */
+    String reason() default "";
 }

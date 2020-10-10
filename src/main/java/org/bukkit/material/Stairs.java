@@ -5,30 +5,15 @@ import org.bukkit.block.BlockFace;
 
 /**
  * Represents stairs.
+ *
+ * @deprecated all usage of MaterialData is deprecated and subject to removal.
+ * Use {@link org.bukkit.block.data.BlockData}.
  */
+@Deprecated
 public class Stairs extends MaterialData implements Directional {
-
-    /**
-     * @param type the raw type id
-     * @deprecated Magic value
-     */
-
-    public Stairs(final int type) {
-        super(type);
-    }
 
     public Stairs(final Material type) {
         super(type);
-    }
-
-    /**
-     * @param type the raw type id
-     * @param data the raw data value
-     * @deprecated Magic value
-     */
-
-    public Stairs(final int type, final byte data) {
-        super(type, data);
     }
 
     /**
@@ -36,7 +21,7 @@ public class Stairs extends MaterialData implements Directional {
      * @param data the raw data value
      * @deprecated Magic value
      */
-
+    @Deprecated
     public Stairs(final Material type, final byte data) {
         super(type, data);
     }
@@ -48,18 +33,18 @@ public class Stairs extends MaterialData implements Directional {
         byte data = getData();
 
         switch (data & 0x3) {
-            case 0x0:
-            default:
-                return BlockFace.EAST;
+        case 0x0:
+        default:
+            return BlockFace.EAST;
 
-            case 0x1:
-                return BlockFace.WEST;
+        case 0x1:
+            return BlockFace.WEST;
 
-            case 0x2:
-                return BlockFace.SOUTH;
+        case 0x2:
+            return BlockFace.SOUTH;
 
-            case 0x3:
-                return BlockFace.NORTH;
+        case 0x3:
+            return BlockFace.NORTH;
         }
     }
 
@@ -73,26 +58,27 @@ public class Stairs extends MaterialData implements Directional {
     /**
      * Set the direction the stair part of the block is facing
      */
+    @Override
     public void setFacingDirection(BlockFace face) {
         byte data;
 
         switch (face) {
-            case NORTH:
-                data = 0x3;
-                break;
+        case NORTH:
+            data = 0x3;
+            break;
 
-            case SOUTH:
-                data = 0x2;
-                break;
+        case SOUTH:
+            data = 0x2;
+            break;
 
-            case EAST:
-            default:
-                data = 0x0;
-                break;
+        case EAST:
+        default:
+            data = 0x0;
+            break;
 
-            case WEST:
-                data = 0x1;
-                break;
+        case WEST:
+            data = 0x1;
+            break;
         }
 
         setData((byte) ((getData() & 0xC) | data));
@@ -101,6 +87,7 @@ public class Stairs extends MaterialData implements Directional {
     /**
      * @return the direction the stair part of the block is facing
      */
+    @Override
     public BlockFace getFacing() {
         return getDescendingDirection();
     }

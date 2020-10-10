@@ -1,14 +1,14 @@
 package com.mohistmc.entity;
 
-import net.minecraft.entity.passive.AbstractChestHorse;
-import org.bukkit.craftbukkit.v1_12_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_12_R1.entity.CraftChestedHorse;
+import net.minecraft.entity.passive.horse.AbstractChestedHorseEntity;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.entity.CraftChestedHorse;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Horse;
 
 public class CraftCustomChestHorse extends CraftChestedHorse {
 
-    public CraftCustomChestHorse(CraftServer server, AbstractChestHorse entity) {
+    public CraftCustomChestHorse(CraftServer server, AbstractChestedHorseEntity entity) {
         super(server, entity);
     }
 

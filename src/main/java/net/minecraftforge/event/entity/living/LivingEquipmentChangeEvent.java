@@ -19,12 +19,13 @@
 
 package net.minecraftforge.event.entity.living;
 
-import javax.annotation.Nonnull;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.inventory.EntityEquipmentSlot;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.inventory.EquipmentSlotType;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
+import net.minecraftforge.eventbus.api.Cancelable;
+
+import javax.annotation.Nonnull;
 
 /**
  * {@link LivingEquipmentChangeEvent} is fired when the Equipment of a Entity changes. <br>
@@ -44,11 +45,11 @@ import net.minecraftforge.fml.common.eventhandler.Cancelable;
  **/
 public class LivingEquipmentChangeEvent extends LivingEvent
 {
-    private final EntityEquipmentSlot slot;
+    private final EquipmentSlotType slot;
     private final ItemStack from;
     private final ItemStack to;
 
-    public LivingEquipmentChangeEvent(EntityLivingBase entity, EntityEquipmentSlot slot, @Nonnull ItemStack from, @Nonnull ItemStack to)
+    public LivingEquipmentChangeEvent(LivingEntity entity, EquipmentSlotType slot, @Nonnull ItemStack from, @Nonnull ItemStack to)
     {
         super(entity);
         this.slot = slot;
@@ -56,7 +57,7 @@ public class LivingEquipmentChangeEvent extends LivingEvent
         this.to = to;
     }
 
-    public EntityEquipmentSlot getSlot() { return this.slot; }
+    public EquipmentSlotType getSlot() { return this.slot; }
     @Nonnull
     public ItemStack getFrom() { return this.from; }
     @Nonnull

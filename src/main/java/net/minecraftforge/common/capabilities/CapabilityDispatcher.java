@@ -19,16 +19,21 @@
 
 package net.minecraftforge.common.capabilities;
 
-import com.google.common.collect.Lists;
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
+
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
+
+import com.google.common.collect.Lists;
+
+import mcp.MethodsReturnNonnullByDefault;
+import net.minecraft.nbt.INBT;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.util.INBTSerializable;
+import net.minecraftforge.common.util.LazyOptional;
 
 /**
  * A high-speed implementation of a capability delegator.
@@ -40,30 +45,34 @@ import net.minecraftforge.common.util.INBTSerializable;
  * Internally the handlers are baked into arrays for fast iteration.
  * The ResourceLocations will be used for the NBT Key when serializing.
  */
-public final class CapabilityDispatcher implements INBTSerializable<NBTTagCompound>, ICapabilityProvider
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
+public final class CapabilityDispatcher implements INBTSerializable<CompoundNBT>, ICapabilityProvider
 {
     private ICapabilityProvider[] caps;
-    private INBTSerializable<NBTBase>[] writers;
+    private INBTSerializable<INBT>[] writers;
     private String[] names;
+    private final List<Runnable> listeners;
 
-    public CapabilityDispatcher(Map<ResourceLocation, ICapabilityProvider> list)
+    public CapabilityDispatcher(Map<ResourceLocation, ICapabilityProvider> list, List<Runnable> listeners)
     {
-        this(list, null);
+        this(list, listeners, null);
     }
 
     @SuppressWarnings("unchecked")
-    public CapabilityDispatcher(Map<ResourceLocation, ICapabilityProvider> list, @Nullable ICapabilityProvider parent)
+    public CapabilityDispatcher(Map<ResourceLocation, ICapabilityProvider> list, List<Runnable> listeners, @Nullable ICapabilityProvider parent)
     {
         List<ICapabilityProvider> lstCaps = Lists.newArrayList();
-        List<INBTSerializable<NBTBase>> lstWriters = Lists.newArrayList();
+        List<INBTSerializable<INBT>> lstWriters = Lists.newArrayList();
         List<String> lstNames = Lists.newArrayList();
+        this.listeners = listeners;
 
         if (parent != null) // Parents go first!
         {
             lstCaps.add(parent);
             if (parent instanceof INBTSerializable)
             {
-                lstWriters.add((INBTSerializable<NBTBase>)parent);
+                lstWriters.add((INBTSerializable<INBT>)parent);
                 lstNames.add("Parent");
             }
         }
@@ -74,7 +83,7 @@ public final class CapabilityDispatcher implements INBTSerializable<NBTTagCompou
             lstCaps.add(prov);
             if (prov instanceof INBTSerializable)
             {
-                lstWriters.add((INBTSerializable<NBTBase>)prov);
+                lstWriters.add((INBTSerializable<INBT>)prov);
                 lstNames.add(entry.getKey().toString());
             }
         }
@@ -84,61 +93,63 @@ public final class CapabilityDispatcher implements INBTSerializable<NBTTagCompou
         names = lstNames.toArray(new String[lstNames.size()]);
     }
 
-    @Override
-    public boolean hasCapability(@Nonnull Capability<?> capability, @Nullable EnumFacing facing)
-    {
-        for (ICapabilityProvider cap : caps)
-        {
-            if (cap.hasCapability(capability, facing))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
 
     @Override
-    @Nullable
-    public <T> T getCapability(@Nonnull Capability<T> capability, @Nullable EnumFacing facing)
+    public <T> LazyOptional<T> getCapability(Capability<T> cap, @Nullable Direction side)
     {
-        for (ICapabilityProvider cap : caps)
+        for (ICapabilityProvider c : caps)
         {
-            T ret = cap.getCapability(capability, facing);
-            if (ret != null)
+            LazyOptional<T> ret = c.getCapability(cap, side);
+            //noinspection ConstantConditions
+            if (ret == null)
+            {
+                throw new RuntimeException(
+                        String.format(
+                                "Provider %s.getCapability() returned null; return LazyOptional.empty() instead!",
+                                c.getClass().getTypeName()
+                        )
+                );
+            }
+            if (ret.isPresent())
             {
                 return ret;
             }
         }
-        return null;
+        return LazyOptional.empty();
     }
 
     @Override
-    public NBTTagCompound serializeNBT()
+    public CompoundNBT serializeNBT()
     {
-        NBTTagCompound nbt = new NBTTagCompound();
+        CompoundNBT nbt = new CompoundNBT();
         for (int x = 0; x < writers.length; x++)
         {
-            nbt.setTag(names[x], writers[x].serializeNBT());
+            nbt.put(names[x], writers[x].serializeNBT());
         }
         return nbt;
     }
 
     @Override
-    public void deserializeNBT(NBTTagCompound nbt)
+    public void deserializeNBT(CompoundNBT nbt)
     {
         for (int x = 0; x < writers.length; x++)
         {
-            if (nbt.hasKey(names[x]))
+            if (nbt.contains(names[x]))
             {
-                writers[x].deserializeNBT(nbt.getTag(names[x]));
+                writers[x].deserializeNBT(nbt.get(names[x]));
             }
         }
     }
 
-    public boolean areCompatible(CapabilityDispatcher other) //Called from ItemStack to compare equality.
+    public boolean areCompatible(@Nullable CapabilityDispatcher other) //Called from ItemStack to compare equality.
     {                                                        // Only compares serializeable caps.
         if (other == null) return this.writers.length == 0;  // Done this way so we can do some pre-checks before doing the costly NBT serialization and compare
         if (this.writers.length == 0) return other.writers.length == 0;
         return this.serializeNBT().equals(other.serializeNBT());
+    }
+
+    public void invalidate()
+    {
+        this.listeners.forEach(Runnable::run);
     }
 }

@@ -19,10 +19,6 @@
 
 package net.minecraftforge.fml.relauncher.libraries;
 
-import com.google.common.io.Files;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -32,7 +28,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import net.minecraftforge.fml.common.FMLLog;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.google.common.io.Files;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+
 /**
  * This is different from the standard maven snapshot metadata.
  * Because none of that data is exposed to us as a user of gradle/maven/whatever.
@@ -50,6 +54,7 @@ import net.minecraftforge.fml.common.FMLLog;
  */
 public class SnapshotJson implements Comparable<SnapshotJson>
 {
+    private static final Logger LOGGER = LogManager.getLogger();
     public static final DateFormat TIMESTAMP = new SimpleDateFormat("yyyyMMdd.hhmmss");
     public static final String META_JSON_FILE = "maven-metadata.json";
     private static final Gson GSON = new GsonBuilder().create();
@@ -69,11 +74,11 @@ public class SnapshotJson implements Comparable<SnapshotJson>
         }
         catch (JsonSyntaxException jse)
         {
-            FMLLog.log.info(FMLLog.log.getMessageFactory().newMessage("Failed to parse snapshot json file {}.", target), jse);
+            LOGGER.info("Failed to parse snapshot json file " + target + ".", jse);
         }
         catch (IOException ioe)
         {
-            FMLLog.log.info(FMLLog.log.getMessageFactory().newMessage("Failed to read snapshot json file {}.", target), ioe);
+            LOGGER.info("Failed to read snapshot json file " + target + ".", ioe);
         }
 
         return new SnapshotJson();

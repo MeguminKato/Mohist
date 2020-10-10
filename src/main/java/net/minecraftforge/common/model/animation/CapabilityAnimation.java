@@ -19,14 +19,16 @@
 
 package net.minecraftforge.common.model.animation;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.nbt.INBT;
+import net.minecraft.util.Direction;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityInject;
 import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.minecraftforge.common.util.LazyOptional;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class CapabilityAnimation
 {
@@ -38,40 +40,31 @@ public class CapabilityAnimation
         CapabilityManager.INSTANCE.register(IAnimationStateMachine.class, new Capability.IStorage<IAnimationStateMachine>()
         {
             @Override
-            public NBTBase writeNBT(Capability<IAnimationStateMachine> capability, IAnimationStateMachine instance, EnumFacing side)
+            public INBT writeNBT(Capability<IAnimationStateMachine> capability, IAnimationStateMachine instance, Direction side)
             {
                 return null;
             }
 
             @Override
-            public void readNBT(Capability<IAnimationStateMachine> capability, IAnimationStateMachine instance, EnumFacing side, NBTBase nbt) {}
+            public void readNBT(Capability<IAnimationStateMachine> capability, IAnimationStateMachine instance, Direction side, INBT nbt) {}
         }, AnimationStateMachine::getMissing);
     }
 
     public static class DefaultItemAnimationCapabilityProvider implements ICapabilityProvider
     {
-        private final IAnimationStateMachine asm;
+        @Nonnull
+        private final LazyOptional<IAnimationStateMachine> asm;
 
-        public DefaultItemAnimationCapabilityProvider(IAnimationStateMachine asm)
+        public DefaultItemAnimationCapabilityProvider(@Nonnull LazyOptional<IAnimationStateMachine> asm)
         {
             this.asm = asm;
         }
 
         @Override
-        public boolean hasCapability(@Nonnull Capability<?> capability, @Nullable EnumFacing facing)
+        @Nonnull
+        public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> capability, @Nullable Direction facing)
         {
-            return capability == ANIMATION_CAPABILITY;
-        }
-
-        @Override
-        @Nullable
-        public <T> T getCapability(@Nonnull Capability<T> capability, @Nullable EnumFacing facing)
-        {
-            if(capability == ANIMATION_CAPABILITY)
-            {
-                return ANIMATION_CAPABILITY.cast(asm);
-            }
-            return null;
+            return ANIMATION_CAPABILITY.orEmpty(capability, asm);
         }
     }
 }

@@ -19,88 +19,111 @@
 
 package net.minecraftforge.registries;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import java.lang.annotation.ElementType;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nullable;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.FMLLog;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.discovery.ASMDataTable;
-import net.minecraftforge.fml.common.discovery.ASMDataTable.ASMData;
-import net.minecraftforge.fml.common.registry.GameRegistry;
-import net.minecraftforge.fml.common.registry.GameRegistry.ObjectHolder;
-import com.mohistmc.util.i18n.Message;
+import net.minecraftforge.forgespi.language.ModFileScanData;
+
+import com.google.common.collect.Maps;
+
+import javax.annotation.Nullable;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+
+import static net.minecraftforge.registries.ForgeRegistry.REGISTRIES;
 
 /**
  * Internal registry for tracking {@link ObjectHolder} references
  */
-public enum ObjectHolderRegistry
+public class ObjectHolderRegistry
 {
-    INSTANCE;
-    private List<ObjectHolderRef> objectHolders = Lists.newArrayList();
-
-    public void findObjectHolders(ASMDataTable table)
+    /**
+     * Exposed to allow modders to register their own notification handlers.
+     * This runnable will be called after a registry snapshot has been injected and finalized.
+     * The internal list is backed by a HashSet so it is HIGHLY recommended you implement a proper equals
+     * and hashCode function to de-duplicate callers here.
+     * The default @ObjectHolder implementation uses the hashCode/equals for the field the annotation is on.
+     */
+    public static void addHandler(Consumer<Predicate<ResourceLocation>> ref)
     {
-        FMLLog.log.info(Message.getString("forge.loader.58"));
-        Set<ASMData> allObjectHolders = table.getAll(GameRegistry.ObjectHolder.class.getName());
-        Map<String, String> classModIds = Maps.newHashMap();
-        Map<String, Class<?>> classCache = Maps.newHashMap();
-        for (ASMData data : table.getAll(Mod.class.getName()))
-        {
-            String modid = (String)data.getAnnotationInfo().get("modid");
-            classModIds.put(data.getClassName(), modid);
-        }
-        for (ASMData data : allObjectHolders)
-        {
-            String className = data.getClassName();
-            String annotationTarget = data.getObjectName();
-            String value = (String) data.getAnnotationInfo().get("value");
-            boolean isClass = className.equals(annotationTarget);
-            if (isClass)
-            {
-                scanTarget(classModIds, classCache, className, annotationTarget, value, isClass, false);
-            }
-        }
-        // double pass - get all the class level annotations first, then the field level annotations
-        for (ASMData data : allObjectHolders)
-        {
-            String className = data.getClassName();
-            String annotationTarget = data.getObjectName();
-            String value = (String) data.getAnnotationInfo().get("value");
-            boolean isClass = className.equals(annotationTarget);
-            if (!isClass)
-            {
-                scanTarget(classModIds, classCache, className, annotationTarget, value, isClass, false);
-            }
-        }
-        scanTarget(classModIds, classCache, "net.minecraft.init.Blocks", null, "minecraft", true, true);
-        scanTarget(classModIds, classCache, "net.minecraft.init.Items", null, "minecraft", true, true);
-        scanTarget(classModIds, classCache, "net.minecraft.init.MobEffects", null, "minecraft", true, true);
-        scanTarget(classModIds, classCache, "net.minecraft.init.Biomes", null, "minecraft", true, true);
-        scanTarget(classModIds, classCache, "net.minecraft.init.Enchantments", null, "minecraft", true, true);
-        scanTarget(classModIds, classCache, "net.minecraft.init.SoundEvents", null, "minecraft", true, true);
-        scanTarget(classModIds, classCache, "net.minecraft.init.PotionTypes", null, "minecraft", true, true);
-        FMLLog.log.info(Message.getString("fml.log.5"), objectHolders.size());
+        objectHolders.add(ref);
     }
 
-    private void scanTarget(Map<String, String> classModIds, Map<String, Class<?>> classCache, String className, @Nullable String annotationTarget, String value, boolean isClass, boolean extractFromValue)
+    /**
+     * Removed the specified handler from the notification list.
+     *
+     * The internal list is backed by a hash set, and so proper hashCode and equals operations are required for success.
+     *
+     * The default @ObjectHolder implementation uses the hashCode/equals for the field the annotation is on.
+     *
+     * @return true if handler was matched and removed.
+     */
+    public static boolean removeHandler(Consumer<Predicate<ResourceLocation>> ref)
+    {
+        return objectHolders.remove(ref);
+    }
+
+    //==============================================================
+    // Everything below is internal, do not use.
+    //==============================================================
+
+    private static final Logger LOGGER = LogManager.getLogger();
+    private static final Set<Consumer<Predicate<ResourceLocation>>> objectHolders = new HashSet<>();
+    private static final Type OBJECT_HOLDER = Type.getType(ObjectHolder.class);
+    private static final Type MOD = Type.getType(Mod.class);
+
+    public static void findObjectHolders()
+    {
+        LOGGER.debug(REGISTRIES,"Processing ObjectHolder annotations");
+        final List<ModFileScanData.AnnotationData> annotations = ModList.get().getAllScanData().stream()
+            .map(ModFileScanData::getAnnotations)
+            .flatMap(Collection::stream)
+            .filter(a -> OBJECT_HOLDER.equals(a.getAnnotationType()) || MOD.equals(a.getAnnotationType()))
+            .collect(Collectors.toList());
+
+        Map<Type, String> classModIds = Maps.newHashMap();
+        Map<Type, Class<?>> classCache = Maps.newHashMap();
+
+        // Gather all @Mod classes, so that @ObjectHolder's in those classes don't need to specify the mod id, Modder convince
+        annotations.stream().filter(a -> MOD.equals(a.getAnnotationType())).forEach(data -> classModIds.put(data.getClassType(), (String)data.getAnnotationData().get("value")));
+
+        // double pass - get all the class level annotations first, then the field level annotations
+        annotations.stream().filter(a -> OBJECT_HOLDER.equals(a.getAnnotationType())).filter(a -> a.getTargetType() == ElementType.TYPE)
+        .forEach(data -> scanTarget(classModIds, classCache, data.getClassType(), null, (String)data.getAnnotationData().get("value"), true, data.getClassType().getClassName().startsWith("net.minecraft.")));
+
+        annotations.stream().filter(a -> OBJECT_HOLDER.equals(a.getAnnotationType())).filter(a -> a.getTargetType() == ElementType.FIELD)
+        .forEach(data -> scanTarget(classModIds, classCache, data.getClassType(), data.getMemberName(), (String)data.getAnnotationData().get("value"), false, false));
+        LOGGER.debug(REGISTRIES,"Found {} ObjectHolder annotations", objectHolders.size());
+    }
+
+    private static void scanTarget(Map<Type, String> classModIds, Map<Type, Class<?>> classCache, Type type, @Nullable String annotationTarget, String value, boolean isClass, boolean extractFromValue)
     {
         Class<?> clazz;
-        if (classCache.containsKey(className))
+        if (classCache.containsKey(type))
         {
-            clazz = classCache.get(className);
+            clazz = classCache.get(type);
         }
         else
         {
             try
             {
-                clazz = Class.forName(className, extractFromValue, getClass().getClassLoader());
-                classCache.put(className, clazz);
+                clazz = Class.forName(type.getClassName(), extractFromValue, ObjectHolderRegistry.class.getClassLoader());
+                classCache.put(type, clazz);
             }
             catch (ClassNotFoundException ex)
             {
@@ -110,24 +133,26 @@ public enum ObjectHolderRegistry
         }
         if (isClass)
         {
-            scanClassForFields(classModIds, className, value, clazz, extractFromValue);
+            scanClassForFields(classModIds, type, value, clazz, extractFromValue);
         }
         else
         {
             if (value.indexOf(':') == -1)
             {
-                String prefix = classModIds.get(className);
+                String prefix = classModIds.get(type);
                 if (prefix == null)
                 {
-                    FMLLog.log.warn("Found an unqualified ObjectHolder annotation ({}) without a modid context at {}.{}, ignoring", value, className, annotationTarget);
-                    throw new IllegalStateException(Message.getString("fml.exception.1"));
+                    LOGGER.warn(REGISTRIES,"Found an unqualified ObjectHolder annotation ({}) without a modid context at {}.{}, ignoring", value, type, annotationTarget);
+                    throw new IllegalStateException("Unqualified reference to ObjectHolder");
                 }
-                value = prefix + ":" + value;
+                value = prefix + ':' + value;
             }
             try
             {
                 Field f = clazz.getDeclaredField(annotationTarget);
-                addHolderReference(new ObjectHolderRef(f, new ResourceLocation(value), extractFromValue));
+                ObjectHolderRef ref = new ObjectHolderRef(f, value, extractFromValue);
+                if (ref.isValid())
+                    addHandler(ref);
             }
             catch (NoSuchFieldException ex)
             {
@@ -137,37 +162,30 @@ public enum ObjectHolderRegistry
         }
     }
 
-    private void scanClassForFields(Map<String, String> classModIds, String className, String value, Class<?> clazz, boolean extractFromExistingValues)
+    private static void scanClassForFields(Map<Type, String> classModIds, Type targetClass, String value, Class<?> clazz, boolean extractFromExistingValues)
     {
-        classModIds.put(className, value);
+        classModIds.put(targetClass, value);
+        final int flags = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC;
         for (Field f : clazz.getFields())
         {
-            int mods = f.getModifiers();
-            boolean isMatch = Modifier.isPublic(mods) && Modifier.isStatic(mods) && Modifier.isFinal(mods);
-            if (!isMatch || f.isAnnotationPresent(ObjectHolder.class))
-            {
+            if (((f.getModifiers() & flags) != flags) || f.isAnnotationPresent(ObjectHolder.class))
                 continue;
-            }
-            addHolderReference(new ObjectHolderRef(f, new ResourceLocation(value, f.getName()), extractFromExistingValues));
+            ObjectHolderRef ref = new ObjectHolderRef(f, value + ':' + f.getName().toLowerCase(Locale.ENGLISH), extractFromExistingValues);
+            if (ref.isValid())
+                addHandler(ref);
         }
     }
 
-    private void addHolderReference(ObjectHolderRef ref)
+    public static void applyObjectHolders()
     {
-        if (ref.isValid())
-        {
-            objectHolders.add(ref);
-        }
+        LOGGER.debug(REGISTRIES,"Applying holder lookups");
+        applyObjectHolders(key -> true);
+        LOGGER.debug(REGISTRIES,"Holder lookups applied");
     }
 
-    public void applyObjectHolders()
+    public static void applyObjectHolders(Predicate<ResourceLocation> filter)
     {
-        FMLLog.log.info(Message.getString("forge.loader.59"));
-        for (ObjectHolderRef ohr : objectHolders)
-        {
-            ohr.apply();
-        }
-        FMLLog.log.info(Message.getString("forge.loader.60"));
+        objectHolders.forEach(e -> e.accept(filter));
     }
 
 }

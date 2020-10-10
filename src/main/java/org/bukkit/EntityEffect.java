@@ -1,15 +1,18 @@
 package org.bukkit;
 
-import com.google.common.collect.Maps;
-import java.util.Map;
 import org.bukkit.entity.Ageable;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Cat;
+import org.bukkit.entity.Dolphin;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Firework;
+import org.bukkit.entity.Fox;
 import org.bukkit.entity.Guardian;
 import org.bukkit.entity.IronGolem;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.Rabbit;
+import org.bukkit.entity.Ravager;
 import org.bukkit.entity.Squid;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.TippedArrow;
@@ -17,6 +20,7 @@ import org.bukkit.entity.Villager;
 import org.bukkit.entity.Witch;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.ZombieVillager;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A list of all Effects that can happen to entities.
@@ -43,7 +47,7 @@ public enum EntityEffect {
      * @deprecated although this effect may trigger other events on non-living
      * entities, it's only supported usage is on living ones.
      */
-
+    @Deprecated
     DEATH(3, Entity.class),
     // PAIL - SPIGOT-3641 duplicate
     // GOLEM_ATTACK(4, IronGolem.class),
@@ -67,7 +71,7 @@ public enum EntityEffect {
      * @deprecated although this effect may trigger other events on non-living
      * entities, it's only supported usage is on living ones.
      */
-
+    @Deprecated
     SHEEP_EAT(10, Entity.class),
     /**
      * When an Iron Golem gives a rose.
@@ -146,35 +150,74 @@ public enum EntityEffect {
     /**
      * Entity hurt due to explosion damage.
      */
-    HURT_EXPLOSION(37, LivingEntity.class);
-
-    private final static Map<Byte, EntityEffect> BY_DATA = Maps.newHashMap();
-
-    static {
-        for (EntityEffect entityEffect : values()) {
-            BY_DATA.put(entityEffect.data, entityEffect);
-        }
-    }
+    HURT_EXPLOSION(37, LivingEntity.class),
+    /**
+     * Dolphin has been fed and is locating a structure.
+     */
+    DOLPHIN_FED(38, Dolphin.class),
+    /**
+     * Ravager has been stunned for 40 ticks.
+     */
+    RAVAGER_STUNNED(39, Ravager.class),
+    /**
+     * Cat taming failed.
+     */
+    CAT_TAME_FAIL(40, Cat.class),
+    /**
+     * Cat taming succeeded.
+     */
+    CAT_TAME_SUCCESS(41, Cat.class),
+    /**
+     * Villager splashes particles during a raid.
+     */
+    VILLAGER_SPLASH(42, Villager.class),
+    /**
+     * Player's bad omen effect removed to start or increase raid difficult.
+     */
+    PLAYER_BAD_OMEN_RAID(43, Player.class),
+    /**
+     * Entity hurt due to berry bush. Prickly!
+     */
+    HURT_BERRY_BUSH(44, LivingEntity.class),
+    /**
+     * Fox chews the food in its mouth
+     */
+    FOX_CHEW(45, Fox.class),
+    /**
+     * Entity teleported as a result of chorus fruit or as an enderman
+     */
+    TELEPORT_ENDER(46, LivingEntity.class),
+    /**
+     * Entity breaks item in main hand
+     */
+    BREAK_EQUIPMENT_MAIN_HAND(47, LivingEntity.class),
+    /**
+     * Entity breaks item in off hand
+     */
+    BREAK_EQUIPMENT_OFF_HAND(48, LivingEntity.class),
+    /**
+     * Entity breaks item in helmet slot
+     */
+    BREAK_EQUIPMENT_HELMET(49, LivingEntity.class),
+    /**
+     * Entity breaks item in chestplate slot
+     */
+    BREAK_EQUIPMENT_CHESTPLATE(50, LivingEntity.class),
+    /**
+     * Entity breaks item in legging slot
+     */
+    BREAK_EQUIPMENT_LEGGINGS(51, LivingEntity.class),
+    /**
+     * Entity breaks item in boot slot
+     */
+    BREAK_EQUIPMENT_BOOTS(52, LivingEntity.class);
 
     private final byte data;
     private final Class<? extends Entity> applicable;
 
-    EntityEffect(final int data, Class<? extends Entity> clazz) {
+    EntityEffect(final int data, /*@NotNull*/ Class<? extends Entity> clazz) {
         this.data = (byte) data;
         this.applicable = clazz;
-    }
-
-    /**
-     * Gets the EntityEffect with the given data value
-     *
-     * @param data Data value to fetch
-     * @return The {@link EntityEffect} representing the given value, or null
-     *     if it doesn't exist
-     * @deprecated Magic value
-     */
-
-    public static EntityEffect getByData(final byte data) {
-        return BY_DATA.get(data);
     }
 
     /**
@@ -183,7 +226,7 @@ public enum EntityEffect {
      * @return The data value
      * @deprecated Magic value
      */
-
+    @Deprecated
     public byte getData() {
         return data;
     }
@@ -193,6 +236,7 @@ public enum EntityEffect {
      *
      * @return applicable class
      */
+    @NotNull
     public Class<? extends Entity> getApplicable() {
         return applicable;
     }

@@ -19,11 +19,12 @@
 
 package net.minecraftforge.common.ticket;
 
+import net.minecraft.util.math.ChunkPos;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.WeakHashMap;
-import net.minecraft.util.math.ChunkPos;
 
 public class ChunkTicketManager<T> implements ITicketGetter<T>
 {

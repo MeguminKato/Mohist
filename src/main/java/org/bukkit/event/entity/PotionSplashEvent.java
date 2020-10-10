@@ -8,25 +8,23 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a splash potion hits an area
  */
 public class PotionSplashEvent extends ProjectileHitEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-    private final Map<LivingEntity, Double> affectedEntities;
     private boolean cancelled;
+    private final Map<LivingEntity, Double> affectedEntities;
 
-    public PotionSplashEvent(final ThrownPotion potion, final Map<LivingEntity, Double> affectedEntities) {
+    public PotionSplashEvent(@NotNull final ThrownPotion potion, @NotNull final Map<LivingEntity, Double> affectedEntities) {
         super(potion);
 
         this.affectedEntities = affectedEntities;
     }
 
-    public static HandlerList getHandlerList() {
-        return handlers;
-    }
-
+    @NotNull
     @Override
     public ThrownPotion getEntity() {
         return (ThrownPotion) entity;
@@ -37,6 +35,7 @@ public class PotionSplashEvent extends ProjectileHitEvent implements Cancellable
      *
      * @return The thrown potion entity
      */
+    @NotNull
     public ThrownPotion getPotion() {
         return (ThrownPotion) getEntity();
     }
@@ -46,8 +45,9 @@ public class PotionSplashEvent extends ProjectileHitEvent implements Cancellable
      *
      * @return A fresh copy of the affected entity list
      */
+    @NotNull
     public Collection<LivingEntity> getAffectedEntities() {
-        return new ArrayList<>(affectedEntities.keySet());
+        return new ArrayList<LivingEntity>(affectedEntities.keySet());
     }
 
     /**
@@ -58,7 +58,7 @@ public class PotionSplashEvent extends ProjectileHitEvent implements Cancellable
      * @return intensity relative to maximum effect; 0.0: not affected; 1.0:
      *     fully hit by potion effects
      */
-    public double getIntensity(LivingEntity entity) {
+    public double getIntensity(@NotNull LivingEntity entity) {
         Double intensity = affectedEntities.get(entity);
         return intensity != null ? intensity : 0.0;
     }
@@ -69,7 +69,7 @@ public class PotionSplashEvent extends ProjectileHitEvent implements Cancellable
      * @param entity For which entity to define a new intensity
      * @param intensity relative to maximum effect
      */
-    public void setIntensity(LivingEntity entity, double intensity) {
+    public void setIntensity(@NotNull LivingEntity entity, double intensity) {
         Validate.notNull(entity, "You must specify a valid entity.");
         if (intensity <= 0.0) {
             affectedEntities.remove(entity);
@@ -78,16 +78,24 @@ public class PotionSplashEvent extends ProjectileHitEvent implements Cancellable
         }
     }
 
+    @Override
     public boolean isCancelled() {
         return cancelled;
     }
 
+    @Override
     public void setCancelled(boolean cancel) {
         cancelled = cancel;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    @NotNull
+    public static HandlerList getHandlerList() {
         return handlers;
     }
 }

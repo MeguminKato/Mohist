@@ -3,9 +3,11 @@ package org.bukkit.event.server;
 import java.net.InetAddress;
 import java.util.Iterator;
 import org.apache.commons.lang.Validate;
+import org.bukkit.UndefinedNullability;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.util.CachedServerIcon;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a server list ping is coming in. Displayed players can be
@@ -15,11 +17,12 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
     private static final int MAGIC_PLAYER_COUNT = Integer.MIN_VALUE;
     private static final HandlerList handlers = new HandlerList();
     private final InetAddress address;
-    private final int numPlayers;
     private String motd;
+    private final int numPlayers;
     private int maxPlayers;
 
-    public ServerListPingEvent(final InetAddress address, final String motd, final int numPlayers, final int maxPlayers) {
+    public ServerListPingEvent(@NotNull final InetAddress address, @NotNull final String motd, final int numPlayers, final int maxPlayers) {
+        super(true);
         Validate.isTrue(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
         this.address = address;
         this.motd = motd;
@@ -36,15 +39,12 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * @param motd the message of the day
      * @param maxPlayers the max number of players
      */
-    protected ServerListPingEvent(final InetAddress address, final String motd, final int maxPlayers) {
+    protected ServerListPingEvent(@NotNull final InetAddress address, @NotNull final String motd, final int maxPlayers) {
+        super(true);
         this.numPlayers = MAGIC_PLAYER_COUNT;
         this.address = address;
         this.motd = motd;
         this.maxPlayers = maxPlayers;
-    }
-
-    public static HandlerList getHandlerList() {
-        return handlers;
     }
 
     /**
@@ -52,6 +52,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      *
      * @return the address
      */
+    @NotNull
     public InetAddress getAddress() {
         return address;
     }
@@ -61,6 +62,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      *
      * @return the message of the day
      */
+    @NotNull
     public String getMotd() {
         return motd;
     }
@@ -70,7 +72,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      *
      * @param motd the message of the day
      */
-    public void setMotd(String motd) {
+    public void setMotd(@NotNull String motd) {
         this.motd = motd;
     }
 
@@ -118,12 +120,18 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * @throws UnsupportedOperationException if the caller of this event does
      *     not support setting the server icon
      */
-    public void setServerIcon(CachedServerIcon icon) throws IllegalArgumentException, UnsupportedOperationException {
+    public void setServerIcon(@UndefinedNullability("implementation dependent") CachedServerIcon icon) throws IllegalArgumentException, UnsupportedOperationException {
         throw new UnsupportedOperationException();
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    @NotNull
+    public static HandlerList getHandlerList() {
         return handlers;
     }
 
@@ -138,6 +146,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * @throws UnsupportedOperationException if the caller of this event does
      *     not support removing players
      */
+    @NotNull
     @Override
     public Iterator<Player> iterator() throws UnsupportedOperationException {
         throw new UnsupportedOperationException();

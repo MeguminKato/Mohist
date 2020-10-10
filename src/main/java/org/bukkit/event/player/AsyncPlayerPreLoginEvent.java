@@ -1,11 +1,10 @@
 package org.bukkit.event.player;
 
-import com.destroystokyo.paper.profile.PlayerProfile;
 import java.net.InetAddress;
 import java.util.UUID;
-import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Stores details for players attempting to log in.
@@ -14,27 +13,19 @@ import org.bukkit.event.HandlerList;
  */
 public class AsyncPlayerPreLoginEvent extends Event {
     private static final HandlerList handlers = new HandlerList();
+    private Result result;
+    private String message;
     private final String name;
     private final InetAddress ipAddress;
     private final UUID uniqueId;
-    private Result result;
-    private String message;
-    private PlayerProfile profile;
 
     @Deprecated
-    public AsyncPlayerPreLoginEvent(final String name, final InetAddress ipAddress) {
+    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress) {
         this(name, ipAddress, null);
     }
 
-    public AsyncPlayerPreLoginEvent(final String name, final InetAddress ipAddress, final UUID uniqueId) {
-        // Paper start
-        this(name, ipAddress, uniqueId, Bukkit.createProfile(uniqueId, name));
-    }
-
-    public AsyncPlayerPreLoginEvent(final String name, final InetAddress ipAddress, final UUID uniqueId, PlayerProfile profile) {
+    public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId) {
         super(true);
-        this.profile = profile;
-        // Paper end
         this.result = Result.ALLOWED;
         this.message = "";
         this.name = name;
@@ -42,42 +33,14 @@ public class AsyncPlayerPreLoginEvent extends Event {
         this.uniqueId = uniqueId;
     }
 
-    public static HandlerList getHandlerList() {
-        return handlers;
-    }
-
-    /**
-     * Gets the PlayerProfile of the player logging in
-     * @return The Profile
-     */
-    public PlayerProfile getPlayerProfile() {
-        return profile;
-    }
-
-    /**
-     * Changes the PlayerProfile the player will login as
-     * @param profile The profile to use
-     */
-    public void setPlayerProfile(PlayerProfile profile) {
-        this.profile = profile;
-    }
-
     /**
      * Gets the current result of the login, as an enum
      *
      * @return Current Result of the login
      */
+    @NotNull
     public Result getLoginResult() {
         return result;
-    }
-
-    /**
-     * Sets the new result of the login, as an enum
-     *
-     * @param result New result to set
-     */
-    public void setLoginResult(final Result result) {
-        this.result = result;
     }
 
     /**
@@ -89,8 +52,18 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * @see #getLoginResult()
      */
     @Deprecated
+    @NotNull
     public PlayerPreLoginEvent.Result getResult() {
         return result == null ? null : result.old();
+    }
+
+    /**
+     * Sets the new result of the login, as an enum
+     *
+     * @param result New result to set
+     */
+    public void setLoginResult(@NotNull final Result result) {
+        this.result = result;
     }
 
     /**
@@ -102,7 +75,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * @see #setLoginResult(Result)
      */
     @Deprecated
-    public void setResult(final PlayerPreLoginEvent.Result result) {
+    public void setResult(@NotNull final PlayerPreLoginEvent.Result result) {
         this.result = result == null ? null : Result.valueOf(result.name());
     }
 
@@ -112,6 +85,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      *
      * @return Current kick message
      */
+    @NotNull
     public String getKickMessage() {
         return message;
     }
@@ -121,7 +95,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      *
      * @param message New kick message
      */
-    public void setKickMessage(final String message) {
+    public void setKickMessage(@NotNull final String message) {
         this.message = message;
     }
 
@@ -139,7 +113,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * @param result New result for disallowing the player
      * @param message Kick message to display to the user
      */
-    public void disallow(final Result result, final String message) {
+    public void disallow(@NotNull final Result result, @NotNull final String message) {
         this.result = result;
         this.message = message;
     }
@@ -154,7 +128,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * @see #disallow(Result, String)
      */
     @Deprecated
-    public void disallow(final PlayerPreLoginEvent.Result result, final String message) {
+    public void disallow(@NotNull final PlayerPreLoginEvent.Result result, @NotNull final String message) {
         this.result = result == null ? null : Result.valueOf(result.name());
         this.message = message;
     }
@@ -164,6 +138,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      *
      * @return the player's name
      */
+    @NotNull
     public String getName() {
         return name;
     }
@@ -173,6 +148,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      *
      * @return The IP address
      */
+    @NotNull
     public InetAddress getAddress() {
         return ipAddress;
     }
@@ -182,12 +158,19 @@ public class AsyncPlayerPreLoginEvent extends Event {
      *
      * @return The unique ID
      */
+    @NotNull
     public UUID getUniqueId() {
         return uniqueId;
     }
 
+    @NotNull
     @Override
     public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    @NotNull
+    public static HandlerList getHandlerList() {
         return handlers;
     }
 
@@ -219,6 +202,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
         KICK_OTHER;
 
         @Deprecated
+        @NotNull
         private PlayerPreLoginEvent.Result old() {
             return PlayerPreLoginEvent.Result.valueOf(name());
         }

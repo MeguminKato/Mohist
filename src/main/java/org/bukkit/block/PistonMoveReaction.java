@@ -2,6 +2,7 @@ package org.bukkit.block;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents how a block or entity will react when interacting with a piston
@@ -33,18 +34,25 @@ public enum PistonMoveReaction {
      */
     PUSH_ONLY(4);
 
-    private static Map<Integer, PistonMoveReaction> byId = new HashMap<>();
-
+    private int id;
+    private static Map<Integer, PistonMoveReaction> byId = new HashMap<Integer, PistonMoveReaction>();
     static {
         for (PistonMoveReaction reaction : PistonMoveReaction.values()) {
             byId.put(reaction.id, reaction);
         }
     }
 
-    private int id;
-
     private PistonMoveReaction(int id) {
         this.id = id;
+    }
+
+    /**
+     * @return The ID of the move reaction
+     * @deprecated Magic value
+     */
+    @Deprecated
+    public int getId() {
+        return this.id;
     }
 
     /**
@@ -52,15 +60,9 @@ public enum PistonMoveReaction {
      * @return The move reaction with that ID
      * @deprecated Magic value
      */
+    @Deprecated
+    @Nullable
     public static PistonMoveReaction getById(int id) {
         return byId.get(id);
-    }
-
-    /**
-     * @return The ID of the move reaction
-     * @deprecated Magic value
-     */
-    public int getId() {
-        return this.id;
     }
 }

@@ -19,11 +19,11 @@
 
 package net.minecraftforge.common.util;
 
-import com.google.common.base.Predicate;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.function.Predicate;
 
 public class RecipeMatcher
 {
@@ -60,7 +60,7 @@ public class RecipeMatcher
                 if (data.get(y))
                     continue;
 
-                if (test.apply(inputs.get(y)))
+                if (test.test(inputs.get(y)))
                 {
                     data.set(offset + y);
                     matched++;

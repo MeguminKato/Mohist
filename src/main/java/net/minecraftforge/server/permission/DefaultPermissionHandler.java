@@ -20,13 +20,14 @@
 package net.minecraftforge.server.permission;
 
 import com.mojang.authlib.GameProfile;
+import net.minecraft.server.MinecraftServer;
+import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraftforge.server.permission.context.IContext;
+
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import javax.annotation.Nullable;
-import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.server.permission.context.IContext;
 
 /**
  * Default implementation of PermissionAPI.
@@ -71,7 +72,7 @@ public enum DefaultPermissionHandler implements IPermissionHandler
             return true;
         }
 
-        MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         return server != null && server.getPlayerList().canSendCommands(profile);
     }
 

@@ -2,18 +2,16 @@ package com.mohistmc.api;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.item.ItemStack;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.EnumHand;
-import org.bukkit.craftbukkit.v1_12_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
 public class PlayerAPI {
 
-    public static Map<EntityPlayerMP, Integer> mods = new ConcurrentHashMap<>();
-    public static Map<EntityPlayerMP, String> modlist = new ConcurrentHashMap<>();
+    public static Map<ServerPlayerEntity, Integer> mods = new ConcurrentHashMap<>();
+    public static Map<ServerPlayerEntity, String> modlist = new ConcurrentHashMap<>();
 
     /**
      *  Get Player ping
@@ -24,17 +22,17 @@ public class PlayerAPI {
         return String.valueOf(getNMSPlayer(player).ping);
     }
 
-    public static EntityPlayerMP getNMSPlayer(Player player) {
+    public static ServerPlayerEntity getNMSPlayer(Player player) {
         return ((CraftPlayer) player).getHandle();
     }
 
-    public static Player getCBPlayer(EntityPlayerMP player) {
+    public static Player getCBPlayer(ServerPlayerEntity player) {
         return player.getBukkitEntity().getPlayer();
     }
 
     // Don't count the default number of mods
     public static int getModSize(Player player) {
-        return mods.get(getNMSPlayer(player)) == null ? 0 : mods.get(getNMSPlayer(player)) - 4;
+        return mods.get(getNMSPlayer(player)) == null ? 0 : mods.get(getNMSPlayer(player)) - 2;
     }
 
     public static String getModlist(Player player) {
@@ -45,12 +43,8 @@ public class PlayerAPI {
         return getModlist(player).contains(modid);
     }
 
-    public static boolean isOp(EntityPlayer ep)
+    public static boolean isOp(PlayerEntity ep)
     {
-        return MinecraftServer.getServerInst().getPlayerList().canSendCommands(ep.getGameProfile());
+        return MinecraftServer.getServer().getPlayerList().canSendCommands(ep.getGameProfile());
     }
-    public static ItemStack getPlayerHandItem(EntityPlayer player, EnumHand hand){
-        return player.getHeldItem(hand);
-    }
-
 }

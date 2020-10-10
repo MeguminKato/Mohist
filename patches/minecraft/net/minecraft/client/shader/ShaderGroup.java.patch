@@ -1,13 +1,12 @@
---- ../src-base/minecraft/net/minecraft/client/shader/ShaderGroup.java
-+++ ../src-work/minecraft/net/minecraft/client/shader/ShaderGroup.java
-@@ -179,7 +179,8 @@
+--- a/net/minecraft/client/shader/ShaderGroup.java
++++ b/net/minecraft/client/shader/ShaderGroup.java
+@@ -164,7 +164,8 @@
+                         throw new JSONException("Render target '" + s4 + "' can't be used as depth buffer");
+                      }
  
-                         if (framebuffer2 == null)
-                         {
--                            ResourceLocation resourcelocation = new ResourceLocation("textures/effect/" + s3 + ".png");
-+                            String[] rl = ResourceLocation.func_177516_a(s3);
-+                            ResourceLocation resourcelocation = new ResourceLocation(rl[0], "textures/effect/" + rl[1] + ".png");
-\ No newline at end of file
-                             IResource iresource = null;
+-                     ResourceLocation resourcelocation = new ResourceLocation("textures/effect/" + s4 + ".png");
++                     ResourceLocation rl = ResourceLocation.func_208304_a(s4);
++                     ResourceLocation resourcelocation = new ResourceLocation(rl.func_110624_b(), "textures/effect/" + rl.func_110623_a() + ".png");
+                      IResource iresource = null;
  
-                             try
+                      try {

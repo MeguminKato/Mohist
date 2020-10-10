@@ -19,32 +19,31 @@
 
 package net.minecraftforge.client.event;
 
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraftforge.fml.common.eventhandler.Cancelable;
-import net.minecraftforge.fml.common.eventhandler.Event;
+import net.minecraftforge.eventbus.api.Cancelable;
+import net.minecraftforge.eventbus.api.Event;
+import net.minecraft.client.gui.screen.Screen;
 
 /**
  * This event is called before any Gui will open.
  * If you don't want this to happen, cancel the event.
  * If you want to override this Gui, simply set the gui variable to your own Gui.
- * 
- * @author jk-5
+ *
  */
 @Cancelable
 public class GuiOpenEvent extends Event
 {
-    private GuiScreen gui;
-    public GuiOpenEvent(GuiScreen gui)
+    private Screen gui;
+    public GuiOpenEvent(Screen gui)
     {
         this.setGui(gui);
     }
 
-    public GuiScreen getGui()
+    public Screen getGui()
     {
         return gui;
     }
 
-    public void setGui(GuiScreen gui)
+    public void setGui(Screen gui)
     {
         this.gui = gui;
     }
